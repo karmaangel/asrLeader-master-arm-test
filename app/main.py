@@ -86,8 +86,10 @@ def ok(data: Any = None) -> dict[str, Any]:
     return {"code": 0, "message": "success", "data": data}
 
 
-def transcribe_ok(data: Any = None) -> dict[str, Any]:
-    return {"code": 200, "message": "success", "data": data}
+def transcribe_ok(data: Any = None, **extra: Any) -> dict[str, Any]:
+    response = {"code": 200, "message": "success", "data": data}
+    response.update(extra)
+    return response
 
 
 def now_ts() -> float:
@@ -153,9 +155,8 @@ def submit_correction_task(segments: list[dict[str, Any]], mode: str) -> tuple[s
     return task_id, future
 
 
-def correction_pending_payload(segments: list[dict[str, Any]], task_id: str, mode: str) -> dict[str, Any]:
+def correction_pending_fields(task_id: str, mode: str) -> dict[str, Any]:
     return {
-        "segments": segments,
         "correction_status": "running",
         "correction_mode": mode,
         "correction_task_id": task_id,
@@ -255,7 +256,7 @@ async def transcribe(
                 mode == "auto" and segment_text_chars(result) > config.POSTPROCESS_SYNC_MAX_CHARS
             ):
                 task_id, _ = submit_correction_task(result, mode)
-                return transcribe_ok(correction_pending_payload(result, task_id, mode))
+                return transcribe_ok(result, **correction_pending_fields(task_id, mode))
 
             task_id, future = submit_correction_task(result, mode)
             try:
@@ -267,7 +268,7 @@ async def transcribe(
                     logger.warning("ASR correction task failed, returning raw ASR: %s", task.get("error"))
                     return transcribe_ok(result)
             except asyncio.TimeoutError:
-                return transcribe_ok(correction_pending_payload(result, task_id, "timeout"))
+                return transcribe_ok(result, **correction_pending_fields(task_id, "timeout"))
         return transcribe_ok(result)
     finally:
         try:
