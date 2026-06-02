@@ -1,0 +1,73 @@
+services:
+  asr-leader-cpu:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.cpu
+      args:
+        - BASE_IMAGE=${BASE_IMAGE:-python:3.11-slim}
+        - http_proxy=${HTTP_PROXY:-}
+        - https_proxy=${HTTPS_PROXY:-}
+    image: funasr-leader-asr:cpu
+    ports:
+      - "${ASR_PORT:-8000}:8000"
+    environment:
+      - ASR_DEVICE=cpu
+      - MODELS_DIR=/models
+      - DATA_DIR=/data
+      - POSTPROCESS_ENABLED=${POSTPROCESS_ENABLED:-true}
+      - POSTPROCESS_PRELOAD=${POSTPROCESS_PRELOAD:-false}
+      - POSTPROCESS_MODEL=${POSTPROCESS_MODEL:-Qwen/Qwen2.5-1.5B-Instruct}
+      - POSTPROCESS_MODEL_DIR=${POSTPROCESS_MODEL_DIR:-}
+      - POSTPROCESS_DEVICE=${POSTPROCESS_DEVICE:-cpu}
+      - POSTPROCESS_MAX_CHARS=${POSTPROCESS_MAX_CHARS:-1200}
+      - POSTPROCESS_MAX_NEW_TOKENS=${POSTPROCESS_MAX_NEW_TOKENS:-512}
+      - LEADER_THRESHOLD=${LEADER_THRESHOLD:-0.62}
+      - LEADER_SPEAKER_THRESHOLD=${LEADER_SPEAKER_THRESHOLD:-0.35}
+      - LEADER_SEGMENT_THRESHOLD=${LEADER_SEGMENT_THRESHOLD:-0.50}
+      - LEADER_SCORE_MARGIN=${LEADER_SCORE_MARGIN:-0.03}
+      - LEADER_MIN_SEGMENT_SECONDS=${LEADER_MIN_SEGMENT_SECONDS:-1.0}
+    volumes:
+      - ../asr/models:/models:ro
+      - ./data:/data
+      - ./data/modelscope-cache:/root/.cache/modelscope
+    restart: unless-stopped
+
+  asr-leader-gpu:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.gpu
+      args:
+        - BASE_IMAGE=${GPU_BASE_IMAGE:-meeting-asr:gpu}
+        - http_proxy=${HTTP_PROXY:-}
+        - https_proxy=${HTTPS_PROXY:-}
+    image: funasr-leader-asr:gpu
+    ports:
+      - "${ASR_PORT:-8000}:8000"
+    environment:
+      - ASR_DEVICE=cuda:0
+      - MODELS_DIR=/models
+      - DATA_DIR=/data
+      - POSTPROCESS_ENABLED=${POSTPROCESS_ENABLED:-true}
+      - POSTPROCESS_PRELOAD=${POSTPROCESS_PRELOAD:-false}
+      - POSTPROCESS_MODEL=${POSTPROCESS_MODEL:-Qwen/Qwen2.5-1.5B-Instruct}
+      - POSTPROCESS_MODEL_DIR=${POSTPROCESS_MODEL_DIR:-}
+      - POSTPROCESS_DEVICE=${POSTPROCESS_DEVICE:-cuda:0}
+      - POSTPROCESS_MAX_CHARS=${POSTPROCESS_MAX_CHARS:-1200}
+      - POSTPROCESS_MAX_NEW_TOKENS=${POSTPROCESS_MAX_NEW_TOKENS:-512}
+      - LEADER_THRESHOLD=${LEADER_THRESHOLD:-0.62}
+      - LEADER_SPEAKER_THRESHOLD=${LEADER_SPEAKER_THRESHOLD:-0.35}
+      - LEADER_SEGMENT_THRESHOLD=${LEADER_SEGMENT_THRESHOLD:-0.50}
+      - LEADER_SCORE_MARGIN=${LEADER_SCORE_MARGIN:-0.03}
+      - LEADER_MIN_SEGMENT_SECONDS=${LEADER_MIN_SEGMENT_SECONDS:-1.0}
+    volumes:
+      - ../asr/models:/models:ro
+      - ./data:/data
+      - ./data/modelscope-cache:/root/.cache/modelscope
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped

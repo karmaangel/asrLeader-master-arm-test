@@ -1,0 +1,28 @@
+ARG BASE_IMAGE=python:3.11-slim
+FROM ${BASE_IMAGE}
+
+WORKDIR /app
+
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null; \
+    sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list 2>/dev/null; \
+    true
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg libsndfile1 && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
+    pip config set global.trusted-host mirrors.aliyun.com && \
+    pip install --no-cache-dir torch==2.11.0+cpu torchaudio==2.11.0+cpu --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements.txt
+
+COPY app/ ./app/
+
+ENV ASR_DEVICE=cpu
+ENV MODELS_DIR=/models
+ENV DATA_DIR=/data
+WORKDIR /app/app
+
+EXPOSE 8000
+ENTRYPOINT []
+CMD ["python", "server.py"]

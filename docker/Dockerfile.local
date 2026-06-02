@@ -1,0 +1,21 @@
+ARG BASE_IMAGE=funasr-leader-asr:cpu-base
+FROM ${BASE_IMAGE}
+
+WORKDIR /app
+RUN pip install --no-cache-dir \
+    "transformers>=4.37.0,<5" \
+    "accelerate>=0.27.0" \
+    "safetensors>=0.4.0" \
+    -i https://mirrors.aliyun.com/pypi/simple/ \
+    --trusted-host mirrors.aliyun.com
+
+COPY app/ ./app/
+
+ENV ASR_DEVICE=cpu
+ENV MODELS_DIR=/models
+ENV DATA_DIR=/data
+
+WORKDIR /app/app
+EXPOSE 8000
+ENTRYPOINT []
+CMD ["python", "server.py"]

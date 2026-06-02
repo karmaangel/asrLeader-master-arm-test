@@ -1,0 +1,45 @@
+services:
+  asr-leader-npu:
+    image: funasr-leader-asr:npu-ascend-20260601
+    container_name: asr-leader-npu
+    restart: unless-stopped
+    privileged: true
+    ipc: host
+    shm_size: "8g"
+    ports:
+      - "8000:8000"
+      - "8002:8000"
+    environment:
+      - ASR_DEVICE=npu:0
+      - MODELS_DIR=/models
+      - DATA_DIR=/data
+      - POSTPROCESS_ENABLED=true
+      - POSTPROCESS_PRELOAD=true
+      - POSTPROCESS_MODEL=Qwen/Qwen2.5-1.5B-Instruct
+      - POSTPROCESS_MODEL_DIR=/models/Qwen2.5-1.5B-Instruct
+      - POSTPROCESS_DEVICE=npu:0
+      - POSTPROCESS_MAX_CHARS=1200
+      - POSTPROCESS_MAX_NEW_TOKENS=512
+      - TRANSFORMERS_OFFLINE=1
+      - MODELSCOPE_OFFLINE=1
+      - LEADER_THRESHOLD=0.62
+      - LEADER_SPEAKER_THRESHOLD=0.35
+      - LEADER_SEGMENT_THRESHOLD=0.50
+      - LEADER_SCORE_MARGIN=0.03
+      - LEADER_MIN_SEGMENT_SECONDS=1.0
+      - ASCEND_VISIBLE_DEVICES=0
+      - ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/latest
+      - ASCEND_OPP_PATH=/usr/local/Ascend/ascend-toolkit/latest/opp
+      - ASCEND_AICPU_PATH=/usr/local/Ascend/ascend-toolkit/latest
+      - TOOLCHAIN_HOME=/usr/local/Ascend/ascend-toolkit/latest/toolkit
+      - LD_LIBRARY_PATH=/usr/local/Ascend/driver/lib64:/usr/local/Ascend/ascend-toolkit/latest/lib64:/usr/local/Ascend/ascend-toolkit/latest/runtime/lib64:$LD_LIBRARY_PATH
+    devices:
+      - /dev/davinci0:/dev/davinci0
+      - /dev/davinci_manager:/dev/davinci_manager
+      - /dev/devmm_svm:/dev/devmm_svm
+      - /dev/hisi_hdc:/dev/hisi_hdc
+    volumes:
+      - /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro
+      - /usr/local/Ascend/ascend-toolkit/latest:/usr/local/Ascend/ascend-toolkit/latest:ro
+      - ./models:/models:ro
+      - ./data:/data

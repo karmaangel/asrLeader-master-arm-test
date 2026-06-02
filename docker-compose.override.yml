@@ -1,0 +1,37 @@
+services:
+  asr-leader-cpu:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.local
+      args:
+        - BASE_IMAGE=funasr-leader-asr:cpu-base
+    environment:
+      - POSTPROCESS_ENABLED=true
+      - POSTPROCESS_PRELOAD=true
+      - POSTPROCESS_WORKERS=${POSTPROCESS_WORKERS:-1}
+      - POSTPROCESS_SYNC_MAX_CHARS=${POSTPROCESS_SYNC_MAX_CHARS:-1200}
+      - POSTPROCESS_SYNC_TIMEOUT_SECONDS=${POSTPROCESS_SYNC_TIMEOUT_SECONDS:-120}
+      - CORRECTION_TASK_WORKERS=${CORRECTION_TASK_WORKERS:-1}
+      - POSTPROCESS_MODEL_DIR=
+    volumes:
+      - D:/Docker/asr/models:/models:ro
+      - ./data:/data
+      - ./data/modelscope-cache:/root/.cache/modelscope
+    ports:
+      - "8000:8000"
+
+  asr-leader-gpu:
+    environment:
+      - POSTPROCESS_ENABLED=true
+      - POSTPROCESS_PRELOAD=true
+      - POSTPROCESS_WORKERS=${POSTPROCESS_WORKERS:-1}
+      - POSTPROCESS_SYNC_MAX_CHARS=${POSTPROCESS_SYNC_MAX_CHARS:-1200}
+      - POSTPROCESS_SYNC_TIMEOUT_SECONDS=${POSTPROCESS_SYNC_TIMEOUT_SECONDS:-120}
+      - CORRECTION_TASK_WORKERS=${CORRECTION_TASK_WORKERS:-1}
+      - POSTPROCESS_MODEL_DIR=
+    volumes:
+      - D:/Docker/asr/models:/models:ro
+      - ./data:/data
+      - ./data/modelscope-cache:/root/.cache/modelscope
+    ports:
+      - "8000:8000"

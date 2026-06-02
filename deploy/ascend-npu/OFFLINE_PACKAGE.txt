@@ -1,0 +1,19 @@
+Offline Ascend NPU ASR package
+
+Image: funasr-leader-asr:npu-ascend-20260601
+Platform: linux/arm64
+Ports: 8000 and 8002
+ASR_DEVICE: npu:0
+POSTPROCESS_DEVICE: npu:0
+POSTPROCESS_ENABLED: true
+POSTPROCESS_MODEL_DIR: /models/Qwen2.5-1.5B-Instruct
+
+Server usage:
+  tar -xf asr-leader-ascend-npu-offline-20260601.tar
+  cd ascend-npu
+  chmod +x *.sh
+  ./start.sh
+
+Health:
+  ./health_check.sh
+  curl http://127.0.0.1:8000/health

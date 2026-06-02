@@ -1,0 +1,22 @@
+ARG BASE_IMAGE=meeting-asr:gpu
+FROM ${BASE_IMAGE}
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
+    pip config set global.trusted-host mirrors.aliyun.com && \
+    pip install --no-cache-dir -r requirements.txt
+
+COPY app/ ./app/
+
+ENV ASR_DEVICE=cuda:0
+ENV MODELS_DIR=/models
+ENV DATA_DIR=/data
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+WORKDIR /app/app
+
+EXPOSE 8000
+ENTRYPOINT []
+CMD ["python", "server.py"]

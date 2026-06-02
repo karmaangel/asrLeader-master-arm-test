@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Local runtime data
+data/
+deploy/ascend-npu/data/
+
+# Docker and offline package artifacts
+*.tar
+*.tar.part-*
+deploy/ascend-npu/image/
+
+# Large model weights should be managed outside normal Git.
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.onnx
+
+# Local editor/system files
+.DS_Store
+Thumbs.db

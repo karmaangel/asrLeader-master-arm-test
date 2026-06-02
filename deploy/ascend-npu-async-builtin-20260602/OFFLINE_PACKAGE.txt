@@ -1,0 +1,12 @@
+Offline Ascend NPU package
+
+Image: funasr-leader-asr:npu-async-builtin-20260602
+Platform: linux/arm64
+Includes: ASR models, Qwen2.5-1.5B, async correction code
+Network needed on server: no
+
+Usage:
+  tar -xf asr-leader-npu-async-builtin-20260602.tar
+  cd ascend-npu-async-builtin-20260602
+  chmod +x *.sh
+  ./start.sh
