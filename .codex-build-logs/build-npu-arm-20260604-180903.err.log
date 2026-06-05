@@ -1,0 +1,357 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.npu-builtin
+#1 transferring dockerfile: 3.65kB 0.0s done
+#1 DONE 0.3s
+
+#2 [internal] load metadata for docker.io/ascendai/pytorch:2.1.0-ubuntu22.04
+#2 DONE 2.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 575B done
+#3 DONE 0.3s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [ 1/14] FROM docker.io/ascendai/pytorch:2.1.0-ubuntu22.04@sha256:de2491b8afd410e27c4b80ac5a0e046edbeb9e574e5872a1709254cea44ccafc
+#5 resolve docker.io/ascendai/pytorch:2.1.0-ubuntu22.04@sha256:de2491b8afd410e27c4b80ac5a0e046edbeb9e574e5872a1709254cea44ccafc
+#5 resolve docker.io/ascendai/pytorch:2.1.0-ubuntu22.04@sha256:de2491b8afd410e27c4b80ac5a0e046edbeb9e574e5872a1709254cea44ccafc 0.5s done
+#5 DONE 0.5s
+
+#4 [internal] load build context
+#4 transferring context: 6.18kB 0.0s done
+#4 DONE 0.3s
+
+#6 [ 2/14] WORKDIR /app
+#6 CACHED
+
+#7 [ 3/14] RUN sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.aliyun.com/ubuntu-ports|g' /etc/apt/sources.list 2>/dev/null;     sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.aliyun.com/ubuntu-ports|g' /etc/apt/sources.list.d/*.list 2>/dev/null;     true
+#7 CACHED
+
+#8 [ 4/14] RUN apt-get update && apt-get install -y --no-install-recommends     ffmpeg libsndfile1 && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [ 5/14] RUN pip install --no-cache-dir "numpy<2"     -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+#9 CACHED
+
+#10 [ 6/14] RUN pip install --no-cache-dir torchaudio==2.1.0     --index-url https://download.pytorch.org/whl/cpu
+#10 CACHED
+
+#11 [ 7/14] COPY requirements-npu.txt .
+#11 CACHED
+
+#12 [ 8/14] RUN TORCH_VER=$(python -c "import torch; print(torch.__version__.split('+')[0])") &&     TORCH_NPU_VER=$(python -c "import importlib.metadata as m; print(m.version('torch-npu'))") &&     echo "torch==${TORCH_VER}" > /tmp/constraints.txt &&     echo "torchaudio==2.1.0" >> /tmp/constraints.txt &&     echo "torch-npu==${TORCH_NPU_VER}" >> /tmp/constraints.txt &&     cat /tmp/constraints.txt &&     pip install --no-cache-dir -r requirements-npu.txt         -c /tmp/constraints.txt         -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+#12 65.18 torch==2.1.0
+#12 65.18 torchaudio==2.1.0
+#12 65.18 torch-npu==2.1.0
+#12 73.55 Looking in indexes: https://mirrors.aliyun.com/pypi/simple/
+#12 76.26 Collecting funasr>=1.3.2 (from -r requirements-npu.txt (line 1))
+#12 76.39   Downloading https://mirrors.aliyun.com/pypi/packages/69/76/5b09344699d2961ab888ee96ef49d11232948cf137629465f105c1a2767d/funasr-1.3.9-py3-none-any.whl (915 kB)
+#12 78.32      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 915.6/915.6 kB 488.8 kB/s eta 0:00:00
+#12 79.52 Collecting modelscope (from -r requirements-npu.txt (line 2))
+#12 79.63   Downloading https://mirrors.aliyun.com/pypi/packages/bb/a8/26bda5fdbcb9ad18c52d81961520b3b55bc082969a46dc8b18495ef7726b/modelscope-1.31.0-py3-none-any.whl (5.9 MB)
+#12 91.97      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.9/5.9 MB 480.4 kB/s eta 0:00:00
+#12 96.24 Collecting soundfile>=0.12.0 (from -r requirements-npu.txt (line 3))
+#12 96.46   Downloading https://mirrors.aliyun.com/pypi/packages/58/ae/c0e4a53d77cf6e9a04179535766b3321b0b9ced5f70522e4caf9329f0046/soundfile-0.13.1-py2.py3-none-manylinux_2_28_aarch64.whl (1.2 MB)
+#12 99.10      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 470.9 kB/s eta 0:00:00
+#12 101.4 Collecting fastapi>=0.104.0 (from -r requirements-npu.txt (line 4))
+#12 101.5   Downloading https://mirrors.aliyun.com/pypi/packages/3e/57/aa70121b5008f44031be645a61a7c4abc24e0e888ad3fc8fda916f4d188e/fastapi-0.124.4-py3-none-any.whl (113 kB)
+#12 101.6      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 113.3/113.3 kB 13.3 MB/s eta 0:00:00
+#12 102.7 Collecting uvicorn>=0.24.0 (from uvicorn[standard]>=0.24.0->-r requirements-npu.txt (line 5))
+#12 102.8   Downloading https://mirrors.aliyun.com/pypi/packages/98/79/2e2620337ef1e4ef7a058b351603b765f59ac28e6e3ac7c5e7cdee9ea1ab/uvicorn-0.33.0-py3-none-any.whl (62 kB)
+#12 102.8      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.3/62.3 kB 18.2 MB/s eta 0:00:00
+#12 103.4 Collecting python-multipart>=0.0.6 (from -r requirements-npu.txt (line 6))
+#12 103.5   Downloading https://mirrors.aliyun.com/pypi/packages/45/58/38b5afbc1a800eeea951b9285d3912613f2603bdf897a4ab0f4bd7f405fc/python_multipart-0.0.20-py3-none-any.whl (24 kB)
+#12 105.5 Collecting transformers<5,>=4.37.0 (from -r requirements-npu.txt (line 7))
+#12 105.5   Downloading https://mirrors.aliyun.com/pypi/packages/51/51/b87caa939fedf307496e4dbf412f4b909af3d9ca8b189fc3b65c1faa456f/transformers-4.46.3-py3-none-any.whl (10.0 MB)
+#12 125.8      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.0/10.0 MB 495.9 kB/s eta 0:00:00
+#12 133.3 Collecting accelerate>=0.27.0 (from -r requirements-npu.txt (line 8))
+#12 133.4   Downloading https://mirrors.aliyun.com/pypi/packages/2c/92/48aec3736ca778ffe5fa68e19e3c18917cba4de43fa46fe6176cccafe267/accelerate-1.0.1-py3-none-any.whl (330 kB)
+#12 134.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 330.9/330.9 kB 549.8 kB/s eta 0:00:00
+#12 139.4 Collecting safetensors>=0.4.0 (from -r requirements-npu.txt (line 9))
+#12 139.5   Downloading https://mirrors.aliyun.com/pypi/packages/5d/9a/add3e6fef267658075c5a41573c26d42d80c935cdc992384dfae435feaef/safetensors-0.5.3-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (459 kB)
+#12 140.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 459.5/459.5 kB 543.2 kB/s eta 0:00:00
+#12 140.6 Requirement already satisfied: scipy>=1.4.1 in /usr/local/python3.8/lib/python3.8/site-packages (from funasr>=1.3.2->-r requirements-npu.txt (line 1)) (1.10.1)
+#12 141.1 Collecting librosa (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 141.3   Downloading https://mirrors.aliyun.com/pypi/packages/b5/ba/c63c5786dfee4c3417094c4b00966e61e4a63efecee22cb7b4c0387dda83/librosa-0.11.0-py3-none-any.whl (260 kB)
+#12 141.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 260.7/260.7 kB 591.8 kB/s eta 0:00:00
+#12 141.9 Requirement already satisfied: numpy in /usr/local/python3.8/lib/python3.8/site-packages (from funasr>=1.3.2->-r requirements-npu.txt (line 1)) (1.24.4)
+#12 141.9 Requirement already satisfied: PyYAML>=5.1.2 in /usr/local/python3.8/lib/python3.8/site-packages (from funasr>=1.3.2->-r requirements-npu.txt (line 1)) (6.0.1)
+#12 143.6 Collecting tqdm (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 143.7   Downloading https://mirrors.aliyun.com/pypi/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl (78 kB)
+#12 143.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.4/78.4 kB 21.8 MB/s eta 0:00:00
+#12 143.8 Requirement already satisfied: requests in /usr/local/python3.8/lib/python3.8/site-packages (from funasr>=1.3.2->-r requirements-npu.txt (line 1)) (2.32.3)
+#12 145.1 Collecting omegaconf>=2.0 (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 145.2   Downloading https://mirrors.aliyun.com/pypi/packages/e3/94/1843518e420fa3ed6919835845df698c7e27e183cb997394e4a670973a65/omegaconf-2.3.0-py3-none-any.whl (79 kB)
+#12 145.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 79.5/79.5 kB 9.3 MB/s eta 0:00:00
+#12 146.0 Collecting hydra-core>=1.3.2 (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 146.1   Downloading https://mirrors.aliyun.com/pypi/packages/c6/50/e0edd38dcd63fb26a8547f13d28f7a008bc4a3fd4eb4ff030673f22ad41a/hydra_core-1.3.2-py3-none-any.whl (154 kB)
+#12 146.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 154.5/154.5 kB 767.0 kB/s eta 0:00:00
+#12 148.6 Collecting huggingface_hub (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 148.7   Downloading https://mirrors.aliyun.com/pypi/packages/a8/af/48ac8483240de756d2438c380746e7130d1c6f75802ef22f3c6d49982787/huggingface_hub-0.36.2-py3-none-any.whl (566 kB)
+#12 149.6      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 566.4/566.4 kB 685.8 kB/s eta 0:00:00
+#12 151.8 Collecting tiktoken (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 152.0   Downloading https://mirrors.aliyun.com/pypi/packages/1e/43/39ab47b3915f1172ec3857f3c0d361281e08b6de251fec81ce5cfd762fe1/tiktoken-0.7.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (1.0 MB)
+#12 154.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.0/1.0 MB 515.4 kB/s eta 0:00:00
+#12 156.0 Collecting sentencepiece (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 156.3   Downloading https://mirrors.aliyun.com/pypi/packages/a9/5b/094146c7f56f59e2a6be21916d9731f66dbcd98f61d6a641a52775e280a3/sentencepiece-0.2.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (1.3 MB)
+#12 158.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 517.6 kB/s eta 0:00:00
+#12 159.2 Collecting kaldiio>=2.17.0 (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 159.2   Downloading https://mirrors.aliyun.com/pypi/packages/ae/e3/6c3b42233225f398f7a72988b524f654ae818cca0d441db847a2761203e9/kaldiio-2.18.1-py3-none-any.whl (29 kB)
+#12 159.7 Collecting jieba (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 159.8   Downloading https://mirrors.aliyun.com/pypi/packages/c6/cb/18eeb235f833b726522d7ebed54f2278ce28ba9438e3135ab0278d9792a2/jieba-0.42.1.tar.gz (19.2 MB)
+#12 193.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19.2/19.2 MB 611.3 kB/s eta 0:00:00
+#12 196.6   Installing build dependencies: started
+#12 224.9   Installing build dependencies: finished with status 'done'
+#12 224.9   Getting requirements to build wheel: started
+#12 227.4   Getting requirements to build wheel: finished with status 'done'
+#12 227.4   Preparing metadata (pyproject.toml): started
+#12 230.5   Preparing metadata (pyproject.toml): finished with status 'done'
+#12 231.0 Collecting jamo (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 231.3   Downloading https://mirrors.aliyun.com/pypi/packages/ac/cc/49812faae67f9a24be6ddaf58a2cf7e8c3cbfcf5b762d9414f7103d2ea2c/jamo-0.4.1-py3-none-any.whl (9.5 kB)
+#12 231.7 Collecting jaconv (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 231.8   Downloading https://mirrors.aliyun.com/pypi/packages/3b/da/9657d637bcacdbaf6a914ce504000da5639f9d945f8d3552a940f021d6c0/jaconv-0.5.0-py3-none-any.whl (16 kB)
+#12 232.4 Collecting umap_learn (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 232.6   Downloading https://mirrors.aliyun.com/pypi/packages/68/5a/3fe95746301fe6d8a8cd59af06fa74599b24dc8077575ca5d3ef12988f61/umap_learn-0.5.8-py3-none-any.whl (89 kB)
+#12 232.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 89.2/89.2 kB 9.9 MB/s eta 0:00:00
+#12 234.2 Collecting editdistance>=0.5.2 (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 234.4   Downloading https://mirrors.aliyun.com/pypi/packages/00/59/808497bf7eccd8e7c6437fbdd580ebb7431a4695a1fd66c12cff14594d50/editdistance-0.8.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (397 kB)
+#12 234.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 397.1/397.1 kB 1.8 MB/s eta 0:00:00
+#12 235.2 Collecting torch_complex (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 235.5   Downloading https://mirrors.aliyun.com/pypi/packages/f4/c5/9b4d756a7ada951e9b17dcc636f98ed1073c737ae809b150ef408afb6298/torch_complex-0.4.4-py3-none-any.whl (9.1 kB)
+#12 236.2 Collecting tensorboardX (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 236.4   Downloading https://mirrors.aliyun.com/pypi/packages/44/71/f3e7c9b2ab67e28c572ab4e9d5fa3499e0d252650f96d8a3a03e26677f53/tensorboardX-2.6.2.2-py2.py3-none-any.whl (101 kB)
+#12 236.4      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 101.7/101.7 kB 5.4 MB/s eta 0:00:00
+#12 237.0 Collecting oss2 (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 237.1   Downloading https://mirrors.aliyun.com/pypi/packages/df/b5/f2cb1950dda46ac2284d6c950489fdacd0e743c2d79a347924d3cc44b86f/oss2-2.19.1.tar.gz (298 kB)
+#12 237.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 298.8/298.8 kB 1.5 MB/s eta 0:00:00
+#12 238.4   Installing build dependencies: started
+#12 263.3   Installing build dependencies: finished with status 'done'
+#12 263.3   Getting requirements to build wheel: started
+#12 267.0   Getting requirements to build wheel: finished with status 'done'
+#12 267.1   Preparing metadata (pyproject.toml): started
+#12 270.1   Preparing metadata (pyproject.toml): finished with status 'done'
+#12 270.2 Requirement already satisfied: filelock in /usr/local/python3.8/lib/python3.8/site-packages (from modelscope->-r requirements-npu.txt (line 2)) (3.13.1)
+#12 270.2 Requirement already satisfied: setuptools in /usr/local/python3.8/lib/python3.8/site-packages (from modelscope->-r requirements-npu.txt (line 2)) (56.0.0)
+#12 270.5 Requirement already satisfied: urllib3>=1.26 in /usr/local/python3.8/lib/python3.8/site-packages (from modelscope->-r requirements-npu.txt (line 2)) (2.2.2)
+#12 270.5 Requirement already satisfied: cffi>=1.0 in /usr/local/python3.8/lib/python3.8/site-packages (from soundfile>=0.12.0->-r requirements-npu.txt (line 3)) (1.16.0)
+#12 271.6 Collecting starlette<0.51.0,>=0.40.0 (from fastapi>=0.104.0->-r requirements-npu.txt (line 4))
+#12 271.6   Downloading https://mirrors.aliyun.com/pypi/packages/b6/c5/7ae467eeddb57260c8ce17a3a09f9f5edba35820fc022d7c55b7decd5d3a/starlette-0.44.0-py3-none-any.whl (73 kB)
+#12 271.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.4/73.4 kB 11.1 MB/s eta 0:00:00
+#12 277.9 Collecting pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4 (from fastapi>=0.104.0->-r requirements-npu.txt (line 4))
+#12 277.9   Downloading https://mirrors.aliyun.com/pypi/packages/f4/3c/8cc1cc84deffa6e25d2d0c688ebb80635dfdbf1dbea3e30c541c8cf4d860/pydantic-2.10.6-py3-none-any.whl (431 kB)
+#12 278.6      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 431.7/431.7 kB 713.0 kB/s eta 0:00:00
+#12 278.6 Requirement already satisfied: typing-extensions>=4.8.0 in /usr/local/python3.8/lib/python3.8/site-packages (from fastapi>=0.104.0->-r requirements-npu.txt (line 4)) (4.9.0)
+#12 279.0 Collecting annotated-doc>=0.0.2 (from fastapi>=0.104.0->-r requirements-npu.txt (line 4))
+#12 279.3   Downloading https://mirrors.aliyun.com/pypi/packages/1e/d3/26bf1008eb3d2daa8ef4cacc7f3bfdc11818d111f7e2d0201bc6e3b49d45/annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+#12 280.1 Collecting click>=7.0 (from uvicorn>=0.24.0->uvicorn[standard]>=0.24.0->-r requirements-npu.txt (line 5))
+#12 280.2   Downloading https://mirrors.aliyun.com/pypi/packages/7e/d4/7ebdbd03970677812aac39c869717059dbb71a4cfc033ca6e5221787892c/click-8.1.8-py3-none-any.whl (98 kB)
+#12 280.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 98.2/98.2 kB 17.0 MB/s eta 0:00:00
+#12 280.7 Collecting h11>=0.8 (from uvicorn>=0.24.0->uvicorn[standard]>=0.24.0->-r requirements-npu.txt (line 5))
+#12 280.8   Downloading https://mirrors.aliyun.com/pypi/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl (37 kB)
+#12 282.0 Collecting packaging>=20.0 (from transformers<5,>=4.37.0->-r requirements-npu.txt (line 7))
+#12 282.0   Downloading https://mirrors.aliyun.com/pypi/packages/df/b2/87e62e8c3e2f4b32e5fe99e0b86d576da1312593b39f47d8ceef365e95ed/packaging-26.2-py3-none-any.whl (100 kB)
+#12 282.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.2/100.2 kB 12.4 MB/s eta 0:00:00
+#12 297.1 Collecting regex!=2019.12.17 (from transformers<5,>=4.37.0->-r requirements-npu.txt (line 7))
+#12 297.3   Downloading https://mirrors.aliyun.com/pypi/packages/0a/27/0b3cf7d9fbe43301aa3473d54406019a7380abe4e3c9ae250bac13c4fdb3/regex-2024.11.6-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (783 kB)
+#12 298.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 783.6/783.6 kB 541.9 kB/s eta 0:00:00
+#12 304.6 Collecting tokenizers<0.21,>=0.20 (from transformers<5,>=4.37.0->-r requirements-npu.txt (line 7))
+#12 304.9   Downloading https://mirrors.aliyun.com/pypi/packages/4a/5f/d8edae0841c5bcaed387ce11359e4ee20d09fc9831b7487a8a946c65f97a/tokenizers-0.20.3-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (2.9 MB)
+#12 310.4      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.9/2.9 MB 531.3 kB/s eta 0:00:00
+#12 310.8 Requirement already satisfied: psutil in /usr/local/python3.8/lib/python3.8/site-packages (from accelerate>=0.27.0->-r requirements-npu.txt (line 8)) (6.0.0)
+#12 310.8 Requirement already satisfied: torch>=1.10.0 in /usr/local/python3.8/lib/python3.8/site-packages (from accelerate>=0.27.0->-r requirements-npu.txt (line 8)) (2.1.0)
+#12 312.6 Collecting httptools>=0.6.3 (from uvicorn[standard]>=0.24.0->-r requirements-npu.txt (line 5))
+#12 312.8   Downloading https://mirrors.aliyun.com/pypi/packages/32/c6/3623958d7899c439d5aeadcc936c3354baaf2d797e07670ccddbae5c4398/httptools-0.6.4-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (455 kB)
+#12 313.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 456.0/456.0 kB 548.4 kB/s eta 0:00:00
+#12 314.3 Collecting python-dotenv>=0.13 (from uvicorn[standard]>=0.24.0->-r requirements-npu.txt (line 5))
+#12 314.4   Downloading https://mirrors.aliyun.com/pypi/packages/6a/3e/b68c118422ec867fa7ab88444e1274aa40681c606d59ac27de5a5588f082/python_dotenv-1.0.1-py3-none-any.whl (19 kB)
+#12 315.8 Collecting uvloop!=0.15.0,!=0.15.1,>=0.14.0 (from uvicorn[standard]>=0.24.0->-r requirements-npu.txt (line 5))
+#12 315.9   Downloading https://mirrors.aliyun.com/pypi/packages/14/39/615af1a05a4010b67ff2061ce22b8df7944acccb79cfed7f9483f4742c04/uvloop-0.22.1-cp38-cp38-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl (4.2 MB)
+#12 323.8      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.2/4.2 MB 528.9 kB/s eta 0:00:00
+#12 326.6 Collecting watchfiles>=0.13 (from uvicorn[standard]>=0.24.0->-r requirements-npu.txt (line 5))
+#12 326.8   Downloading https://mirrors.aliyun.com/pypi/packages/68/27/f3a1147af79085da95a879d7e6f953380da17a90b50d990749ae287550ca/watchfiles-0.24.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (439 kB)
+#12 327.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 439.4/439.4 kB 1.0 MB/s eta 0:00:00
+#12 330.7 Collecting websockets>=10.4 (from uvicorn[standard]>=0.24.0->-r requirements-npu.txt (line 5))
+#12 330.9   Downloading https://mirrors.aliyun.com/pypi/packages/92/7e/8fa930c6426a56c47910792717787640329e4a0e37cdfda20cf89da67126/websockets-13.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (164 kB)
+#12 331.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 165.0/165.0 kB 3.8 MB/s eta 0:00:00
+#12 331.0 Requirement already satisfied: pycparser in /usr/local/python3.8/lib/python3.8/site-packages (from cffi>=1.0->soundfile>=0.12.0->-r requirements-npu.txt (line 3)) (2.22)
+#12 331.2 Requirement already satisfied: fsspec>=2023.5.0 in /usr/local/python3.8/lib/python3.8/site-packages (from huggingface_hub->funasr>=1.3.2->-r requirements-npu.txt (line 1)) (2024.2.0)
+#12 332.7 Collecting hf-xet<2.0.0,>=1.1.3 (from huggingface_hub->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 332.9   Downloading https://mirrors.aliyun.com/pypi/packages/c4/a2/546f47f464737b3edbab6f8ddb57f2599b93d2cbb66f06abb475ccb48651/hf_xet-1.5.0-cp37-abi3-manylinux_2_28_aarch64.whl (4.3 MB)
+#12 340.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.3/4.3 MB 557.9 kB/s eta 0:00:00
+#12 342.2 Collecting antlr4-python3-runtime==4.9.* (from hydra-core>=1.3.2->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 342.3   Downloading https://mirrors.aliyun.com/pypi/packages/3e/38/7859ff46355f76f8d19459005ca000b6e7012f2f1ca597746cbcd1fbfe5e/antlr4-python3-runtime-4.9.3.tar.gz (117 kB)
+#12 342.4      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 117.0/117.0 kB 12.0 MB/s eta 0:00:00
+#12 342.8   Installing build dependencies: started
+#12 365.1   Installing build dependencies: finished with status 'done'
+#12 365.1   Getting requirements to build wheel: started
+#12 367.8   Getting requirements to build wheel: finished with status 'done'
+#12 367.8   Preparing metadata (pyproject.toml): started
+#12 370.4   Preparing metadata (pyproject.toml): finished with status 'done'
+#12 373.9 Collecting importlib-resources (from hydra-core>=1.3.2->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 374.0   Downloading https://mirrors.aliyun.com/pypi/packages/e1/6a/4604f9ae2fa62ef47b9de2fa5ad599589d28c9fd1d335f32759813dfa91e/importlib_resources-6.4.5-py3-none-any.whl (36 kB)
+#12 374.6 Collecting annotated-types>=0.6.0 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.104.0->-r requirements-npu.txt (line 4))
+#12 374.9   Downloading https://mirrors.aliyun.com/pypi/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl (13 kB)
+#12 403.5 Collecting pydantic-core==2.27.2 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.104.0->-r requirements-npu.txt (line 4))
+#12 403.7   Downloading https://mirrors.aliyun.com/pypi/packages/35/eb/8234e05452d92d2b102ffa1b56d801c3567e628fdc63f02080fdfc68fd5e/pydantic_core-2.27.2-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (1.8 MB)
+#12 406.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 646.6 kB/s eta 0:00:00
+#12 407.2 Collecting typing-extensions>=4.8.0 (from fastapi>=0.104.0->-r requirements-npu.txt (line 4))
+#12 407.3   Downloading https://mirrors.aliyun.com/pypi/packages/8b/54/b1ae86c0973cc6f0210b53d508ca3641fb6d0c56823f288d108bc7ab3cc8/typing_extensions-4.13.2-py3-none-any.whl (45 kB)
+#12 407.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.8/45.8 kB 21.3 MB/s eta 0:00:00
+#12 407.6 Requirement already satisfied: charset-normalizer<4,>=2 in /usr/local/python3.8/lib/python3.8/site-packages (from requests->funasr>=1.3.2->-r requirements-npu.txt (line 1)) (3.3.2)
+#12 407.6 Requirement already satisfied: idna<4,>=2.5 in /usr/local/python3.8/lib/python3.8/site-packages (from requests->funasr>=1.3.2->-r requirements-npu.txt (line 1)) (3.7)
+#12 407.6 Requirement already satisfied: certifi>=2017.4.17 in /usr/local/python3.8/lib/python3.8/site-packages (from requests->funasr>=1.3.2->-r requirements-npu.txt (line 1)) (2024.7.4)
+#12 408.4 Collecting anyio<5,>=3.4.0 (from starlette<0.51.0,>=0.40.0->fastapi>=0.104.0->-r requirements-npu.txt (line 4))
+#12 408.6   Downloading https://mirrors.aliyun.com/pypi/packages/1b/b4/f7e396030e3b11394436358ca258a81d6010106582422f23443c16ca1873/anyio-4.5.2-py3-none-any.whl (89 kB)
+#12 408.6      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 89.8/89.8 kB 22.8 MB/s eta 0:00:00
+#12 409.3 Requirement already satisfied: sympy in /usr/local/python3.8/lib/python3.8/site-packages (from torch>=1.10.0->accelerate>=0.27.0->-r requirements-npu.txt (line 8)) (1.12)
+#12 409.3 Requirement already satisfied: networkx in /usr/local/python3.8/lib/python3.8/site-packages (from torch>=1.10.0->accelerate>=0.27.0->-r requirements-npu.txt (line 8)) (3.0)
+#12 409.4 Requirement already satisfied: jinja2 in /usr/local/python3.8/lib/python3.8/site-packages (from torch>=1.10.0->accelerate>=0.27.0->-r requirements-npu.txt (line 8)) (3.1.3)
+#12 410.2 Collecting audioread>=2.1.9 (from librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 410.3   Downloading https://mirrors.aliyun.com/pypi/packages/57/8d/30aa32745af16af0a9a650115fbe81bde7c610ed5c21b381fca0196f3a7f/audioread-3.0.1-py3-none-any.whl (23 kB)
+#12 413.4 Collecting numba>=0.51.0 (from librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 413.6   Downloading https://mirrors.aliyun.com/pypi/packages/c6/97/dad816d9313041aa967e13f3b21fdff040433c7efe9eff3112bcf3b40bc1/numba-0.58.1-cp38-cp38-manylinux2014_aarch64.manylinux_2_17_aarch64.whl (3.4 MB)
+#12 418.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.4/3.4 MB 661.3 kB/s eta 0:00:00
+#12 421.5 Collecting scikit-learn>=1.1.0 (from librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 421.6   Downloading https://mirrors.aliyun.com/pypi/packages/49/81/91585dc83ec81dcd52e934f6708bf350b06949d8bfa13bf3b711b851c3f4/scikit_learn-1.3.2-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (10.5 MB)
+#12 438.9      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.5/10.5 MB 607.9 kB/s eta 0:00:00
+#12 439.8 Collecting joblib>=1.0 (from librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 440.0   Downloading https://mirrors.aliyun.com/pypi/packages/91/29/df4b9b42f2be0b623cbd5e2140cafcaa2bef0759a00b7b70104dcfe2fb51/joblib-1.4.2-py3-none-any.whl (301 kB)
+#12 440.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 301.8/301.8 kB 616.3 kB/s eta 0:00:00
+#12 440.5 Requirement already satisfied: decorator>=4.3.0 in /usr/local/python3.8/lib/python3.8/site-packages (from librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1)) (5.1.1)
+#12 441.4 Collecting pooch>=1.1 (from librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 441.5   Downloading https://mirrors.aliyun.com/pypi/packages/a8/87/77cc11c7a9ea9fd05503def69e3d18605852cd0d4b0d3b8f15bbeb3ef1d1/pooch-1.8.2-py3-none-any.whl (64 kB)
+#12 441.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.6/64.6 kB 17.6 MB/s eta 0:00:00
+#12 443.9 Collecting soxr>=0.3.2 (from librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 444.1   Downloading https://mirrors.aliyun.com/pypi/packages/70/90/872f5a4277fc43ca5643cd9919d8de8d3c392fdd03fc09861669e6c1f2ff/soxr-0.3.7-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (1.2 MB)
+#12 446.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 611.2 kB/s eta 0:00:00
+#12 446.7 Collecting lazy_loader>=0.1 (from librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 446.9   Downloading https://mirrors.aliyun.com/pypi/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl (12 kB)
+#12 449.7 Collecting msgpack>=1.0 (from librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 449.9   Downloading https://mirrors.aliyun.com/pypi/packages/bd/74/b0fcaec0cea3f104c61c646f49571864f12321de7b8705e98a32d29ba2ad/msgpack-1.1.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (409 kB)
+#12 450.5      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 409.2/409.2 kB 676.7 kB/s eta 0:00:00
+#12 450.9 Collecting crcmod>=1.7 (from oss2->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 451.0   Downloading https://mirrors.aliyun.com/pypi/packages/6b/b0/e595ce2a2527e169c3bcd6c33d2473c1918e0b7f6826a043ca1245dd4e5b/crcmod-1.7.tar.gz (89 kB)
+#12 451.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 89.7/89.7 kB 16.5 MB/s eta 0:00:00
+#12 451.3   Installing build dependencies: started
+#12 471.5   Installing build dependencies: finished with status 'done'
+#12 471.6   Getting requirements to build wheel: started
+#12 473.7   Getting requirements to build wheel: finished with status 'done'
+#12 473.7   Preparing metadata (pyproject.toml): started
+#12 476.0   Preparing metadata (pyproject.toml): finished with status 'done'
+#12 478.6 Collecting pycryptodome>=3.4.7 (from oss2->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 478.7   Downloading https://mirrors.aliyun.com/pypi/packages/50/52/adaf4c8c100a8c49d2bd058e5b551f73dfd8cb89eb4911e25a0c469b6b4e/pycryptodome-3.23.0-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (2.2 MB)
+#12 482.1      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.2/2.2 MB 656.3 kB/s eta 0:00:00
+#12 482.6 Collecting aliyun-python-sdk-kms>=2.4.1 (from oss2->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 482.7   Downloading https://mirrors.aliyun.com/pypi/packages/11/5c/0132193d7da2c735669a1ed103b142fd63c9455984d48c5a88a1a516efaa/aliyun_python_sdk_kms-2.16.5-py2.py3-none-any.whl (99 kB)
+#12 482.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 99.5/99.5 kB 6.3 MB/s eta 0:00:00
+#12 483.3 Collecting aliyun-python-sdk-core>=2.13.12 (from oss2->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 483.4   Downloading https://mirrors.aliyun.com/pypi/packages/3e/09/da9f58eb38b4fdb97ba6523274fbf445ef6a06be64b433693da8307b4bec/aliyun-python-sdk-core-2.16.0.tar.gz (449 kB)
+#12 484.0      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 449.6/449.6 kB 735.1 kB/s eta 0:00:00
+#12 485.0   Installing build dependencies: started
+#12 505.0   Installing build dependencies: finished with status 'done'
+#12 505.0   Getting requirements to build wheel: started
+#12 508.2   Getting requirements to build wheel: finished with status 'done'
+#12 508.2   Preparing metadata (pyproject.toml): started
+#12 511.0   Preparing metadata (pyproject.toml): finished with status 'done'
+#12 511.0 Requirement already satisfied: six in /usr/local/python3.8/lib/python3.8/site-packages (from oss2->funasr>=1.3.2->-r requirements-npu.txt (line 1)) (1.16.0)
+#12 511.2 Requirement already satisfied: protobuf>=3.20 in /usr/local/python3.8/lib/python3.8/site-packages (from tensorboardX->funasr>=1.3.2->-r requirements-npu.txt (line 1)) (5.27.2)
+#12 511.7 INFO: pip is looking at multiple versions of umap-learn to determine which version is compatible with other requirements. This could take a while.
+#12 511.7 Collecting umap_learn (from funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 511.8   Downloading https://mirrors.aliyun.com/pypi/packages/3c/8f/671c0e1f2572ba625cbcc1faeba9435e00330c3d6962858711445cf1e817/umap_learn-0.5.7-py3-none-any.whl (88 kB)
+#12 511.9      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 88.8/88.8 kB 22.5 MB/s eta 0:00:00
+#12 512.6 Collecting pynndescent>=0.5 (from umap_learn->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 512.7   Downloading https://mirrors.aliyun.com/pypi/packages/b2/e6/94145d714402fd5ade00b5661f2d0ab981219e07f7db9bfa16786cdb9c04/pynndescent-0.6.0-py3-none-any.whl (73 kB)
+#12 512.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.5/73.5 kB 21.3 MB/s eta 0:00:00
+#12 513.2 Collecting jmespath<1.0.0,>=0.9.3 (from aliyun-python-sdk-core>=2.13.12->oss2->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 513.3   Downloading https://mirrors.aliyun.com/pypi/packages/07/cb/5f001272b6faeb23c1c9e0acc04d48eaaf5c862c17709d20e3469c6e0139/jmespath-0.10.0-py2.py3-none-any.whl (24 kB)
+#12 520.5 Collecting cryptography>=3.0.0 (from aliyun-python-sdk-core>=2.13.12->oss2->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 520.7   Downloading https://mirrors.aliyun.com/pypi/packages/00/68/d70c852797aa68e8e48d12e5a87170c43f67bb4a59403627259dd57d15de/cryptography-47.0.0-cp38-abi3-manylinux_2_34_aarch64.whl (4.6 MB)
+#12 527.3      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.6/4.6 MB 699.4 kB/s eta 0:00:00
+#12 528.0 Collecting sniffio>=1.1 (from anyio<5,>=3.4.0->starlette<0.51.0,>=0.40.0->fastapi>=0.104.0->-r requirements-npu.txt (line 4))
+#12 528.3   Downloading https://mirrors.aliyun.com/pypi/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl (10 kB)
+#12 528.8 Collecting exceptiongroup>=1.0.2 (from anyio<5,>=3.4.0->starlette<0.51.0,>=0.40.0->fastapi>=0.104.0->-r requirements-npu.txt (line 4))
+#12 528.9   Downloading https://mirrors.aliyun.com/pypi/packages/8a/0e/97c33bf5009bdbac74fd2beace167cab3f978feb69cc36f1ef79360d6c4e/exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+#12 531.5 Collecting llvmlite<0.42,>=0.41.0dev0 (from numba>=0.51.0->librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 531.7   Downloading https://mirrors.aliyun.com/pypi/packages/37/c0/2fcbb511e4af6f4bbd053b1ce16ae216ff088f3255add6b516c34175bfbc/llvmlite-0.41.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (42.6 MB)
+#12 605.7      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 42.6/42.6 MB 590.1 kB/s eta 0:00:00
+#12 607.8 Collecting importlib-metadata (from numba>=0.51.0->librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 607.8   Downloading https://mirrors.aliyun.com/pypi/packages/a0/d9/a1e041c5e7caa9a05c925f4bdbdfb7f006d1f74996af53467bc394c97be7/importlib_metadata-8.5.0-py3-none-any.whl (26 kB)
+#12 608.8 Collecting platformdirs>=2.5.0 (from pooch>=1.1->librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 608.9   Downloading https://mirrors.aliyun.com/pypi/packages/3c/a6/bc1012356d8ece4d66dd75c4b9fc6c1f6650ddd5991e421177d9f8f671be/platformdirs-4.3.6-py3-none-any.whl (18 kB)
+#12 610.0 Collecting threadpoolctl>=2.0.0 (from scikit-learn>=1.1.0->librosa->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 610.1   Downloading https://mirrors.aliyun.com/pypi/packages/4b/2c/ffbf7a134b9ab11a67b0cf0726453cedd9c5043a4fe7a35d1cefa9a1bcfb/threadpoolctl-3.5.0-py3-none-any.whl (18 kB)
+#12 610.9 Collecting zipp>=3.1.0 (from importlib-resources->hydra-core>=1.3.2->funasr>=1.3.2->-r requirements-npu.txt (line 1))
+#12 611.2   Downloading https://mirrors.aliyun.com/pypi/packages/62/8b/5ba542fa83c90e09eac972fc9baca7a88e7e7ca4b221a89251954019308b/zipp-3.20.2-py3-none-any.whl (9.2 kB)
+#12 611.3 Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/python3.8/lib/python3.8/site-packages (from jinja2->torch>=1.10.0->accelerate>=0.27.0->-r requirements-npu.txt (line 8)) (2.1.5)
+#12 611.5 Requirement already satisfied: mpmath>=0.19 in /usr/local/python3.8/lib/python3.8/site-packages (from sympy->torch>=1.10.0->accelerate>=0.27.0->-r requirements-npu.txt (line 8)) (1.3.0)
+#12 612.3 Building wheels for collected packages: antlr4-python3-runtime, jieba, oss2, aliyun-python-sdk-core, crcmod
+#12 612.3   Building wheel for antlr4-python3-runtime (pyproject.toml): started
+#12 615.4   Building wheel for antlr4-python3-runtime (pyproject.toml): finished with status 'done'
+#12 615.4   Created wheel for antlr4-python3-runtime: filename=antlr4_python3_runtime-4.9.3-py3-none-any.whl size=144554 sha256=3deba83712c15467ea1803765be3912ae75e63f6478d91459b55bbbfe495fc59
+#12 615.4   Stored in directory: /tmp/pip-ephem-wheel-cache-57tvk07y/wheels/22/ed/00/0fb946c052a285833983d24b2a8cb2cbc7dbd634a8ea152a36
+#12 615.4   Building wheel for jieba (pyproject.toml): started
+#12 623.4   Building wheel for jieba (pyproject.toml): finished with status 'done'
+#12 623.5   Created wheel for jieba: filename=jieba-0.42.1-py3-none-any.whl size=19314458 sha256=acd76a4b1f98b327e8373cf1c5a1d9fef667d441905c3aa1b302280b63d7bf7e
+#12 623.5   Stored in directory: /tmp/pip-ephem-wheel-cache-57tvk07y/wheels/44/66/13/57d80ae29d31d0ed7ee6898cb75a5c3c6da353e5e1ef5a6203
+#12 623.6   Building wheel for oss2 (pyproject.toml): started
+#12 626.5   Building wheel for oss2 (pyproject.toml): finished with status 'done'
+#12 626.5   Created wheel for oss2: filename=oss2-2.19.1-py3-none-any.whl size=123938 sha256=c07133f489718d70de863f5d02d358a9499e3cc040563406ab7e0df83c9fd322
+#12 626.5   Stored in directory: /tmp/pip-ephem-wheel-cache-57tvk07y/wheels/dd/31/aa/b0cc64f58cb4d8efcecd0a912b20121044f2cb9c09d9f74524
+#12 626.5   Building wheel for aliyun-python-sdk-core (pyproject.toml): started
+#12 630.6   Building wheel for aliyun-python-sdk-core (pyproject.toml): finished with status 'done'
+#12 630.6   Created wheel for aliyun-python-sdk-core: filename=aliyun_python_sdk_core-2.16.0-py3-none-any.whl size=535318 sha256=adde0b6fde3911fb40ce5b0f0166d7a8ded3056e99f67554e831c026c40d8941
+#12 630.6   Stored in directory: /tmp/pip-ephem-wheel-cache-57tvk07y/wheels/29/70/3c/f445e38b287eecdc4c647017065f6a80c3efd4ffb594f44277
+#12 630.6   Building wheel for crcmod (pyproject.toml): started
+#12 633.5   Building wheel for crcmod (pyproject.toml): finished with status 'done'
+#12 633.5   Created wheel for crcmod: filename=crcmod-1.7-py3-none-any.whl size=18832 sha256=7425151521e51db9e0851764061a7b64e71484a6d5f8a2c5b7b004274ff5a71b
+#12 633.5   Stored in directory: /tmp/pip-ephem-wheel-cache-57tvk07y/wheels/8f/38/63/e2a952b911fe7ba9a81ebf0090def51fc5c5efef5fcad6c663
+#12 633.5 Successfully built antlr4-python3-runtime jieba oss2 aliyun-python-sdk-core crcmod
+#12 645.7 Installing collected packages: sentencepiece, jieba, jamo, jaconv, crcmod, antlr4-python3-runtime, zipp, websockets, uvloop, typing-extensions, tqdm, threadpoolctl, soxr, sniffio, safetensors, regex, python-multipart, python-dotenv, pycryptodome, platformdirs, packaging, omegaconf, msgpack, llvmlite, kaldiio, joblib, jmespath, httptools, hf-xet, h11, editdistance, click, audioread, annotated-doc, uvicorn, torch_complex, tiktoken, tensorboardX, soundfile, scikit-learn, pydantic-core, pooch, modelscope, lazy_loader, importlib-resources, importlib-metadata, huggingface_hub, exceptiongroup, cryptography, annotated-types, tokenizers, pydantic, numba, hydra-core, anyio, aliyun-python-sdk-core, accelerate, watchfiles, transformers, starlette, pynndescent, librosa, aliyun-python-sdk-kms, umap_learn, oss2, fastapi, funasr
+#12 658.7   Attempting uninstall: typing-extensions
+#12 658.7     Found existing installation: typing_extensions 4.9.0
+#12 658.8     Uninstalling typing_extensions-4.9.0:
+#12 664.7       Successfully uninstalled typing_extensions-4.9.0
+#12 841.4 Successfully installed accelerate-1.0.1 aliyun-python-sdk-core-2.16.0 aliyun-python-sdk-kms-2.16.5 annotated-doc-0.0.4 annotated-types-0.7.0 antlr4-python3-runtime-4.9.3 anyio-4.5.2 audioread-3.0.1 click-8.1.8 crcmod-1.7 cryptography-47.0.0 editdistance-0.8.1 exceptiongroup-1.3.1 fastapi-0.124.4 funasr-1.3.9 h11-0.16.0 hf-xet-1.5.0 httptools-0.6.4 huggingface_hub-0.36.2 hydra-core-1.3.2 importlib-metadata-8.5.0 importlib-resources-6.4.5 jaconv-0.5.0 jamo-0.4.1 jieba-0.42.1 jmespath-0.10.0 joblib-1.4.2 kaldiio-2.18.1 lazy_loader-0.4 librosa-0.11.0 llvmlite-0.41.1 modelscope-1.31.0 msgpack-1.1.1 numba-0.58.1 omegaconf-2.3.0 oss2-2.19.1 packaging-26.2 platformdirs-4.3.6 pooch-1.8.2 pycryptodome-3.23.0 pydantic-2.10.6 pydantic-core-2.27.2 pynndescent-0.6.0 python-dotenv-1.0.1 python-multipart-0.0.20 regex-2024.11.6 safetensors-0.5.3 scikit-learn-1.3.2 sentencepiece-0.2.0 sniffio-1.3.1 soundfile-0.13.1 soxr-0.3.7 starlette-0.44.0 tensorboardX-2.6.2.2 threadpoolctl-3.5.0 tiktoken-0.7.0 tokenizers-0.20.3 torch_complex-0.4.4 tqdm-4.67.3 transformers-4.46.3 typing-extensions-4.13.2 umap_learn-0.5.7 uvicorn-0.33.0 uvloop-0.22.1 watchfiles-0.24.0 websockets-13.1 zipp-3.20.2
+#12 841.4 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable.It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#12 843.1 
+#12 843.1 [notice] A new release of pip is available: 24.1.2 -> 25.0.1
+#12 843.1 [notice] To update, run: pip install --upgrade pip
+#12 DONE 848.9s
+
+#13 [ 9/14] RUN bash -lc "source /usr/local/Ascend/ascend-toolkit/set_env.sh 2>/dev/null || true; python -c "import torch; import torch_npu; print('torch:', torch.__version__); print('torch_npu:', torch_npu.__version__); print('npu registered:', 'npu' in dir(torch))""
+#13 121.8 /usr/local/python3.8/lib/python3.8/site-packages/torch_npu/dynamo/__init__.py:18: UserWarning: Register eager implementation for the 'npu' backend of dynamo, as torch_npu was not compiled with torchair.
+#13 121.8   warnings.warn(
+#13 121.8 torch: 2.1.0
+#13 121.8 torch_npu: 2.1.0
+#13 121.8 npu registered: True
+#13 DONE 129.1s
+
+#14 [10/14] COPY app/ ./app/
+#14 DONE 1.6s
+
+#15 [11/14] COPY deploy/ascend-npu/models/ ./models/
+#15 DONE 28.7s
+
+#16 [12/14] COPY docker/entrypoint.npu.sh /usr/local/bin/asr-npu-entrypoint.sh
+#16 DONE 1.7s
+
+#17 [13/14] RUN sed -i 's/\r$//' /usr/local/bin/asr-npu-entrypoint.sh &&     chmod +x /usr/local/bin/asr-npu-entrypoint.sh
+#17 DONE 3.5s
+
+#18 [14/14] WORKDIR /app/app
+#18 DONE 1.3s
+
+#19 exporting to image
+#19 exporting layers
+#19 exporting layers 103.2s done
+#19 exporting manifest sha256:4a206a75a0e2c8179389938dde72f001c806f7756dfab4a13be59579c0824fc5
+#19 exporting manifest sha256:4a206a75a0e2c8179389938dde72f001c806f7756dfab4a13be59579c0824fc5 0.5s done
+#19 exporting config sha256:7af12af037917d5bb6963c2bc76d4fc2826c1aab6545481e0cf6ab8e88ac9d94
+#19 exporting config sha256:7af12af037917d5bb6963c2bc76d4fc2826c1aab6545481e0cf6ab8e88ac9d94 0.5s done
+#19 naming to docker.io/library/funasr-leader-asr:npu-ascend-oldbase-20260604
+#19 naming to docker.io/library/funasr-leader-asr:npu-ascend-oldbase-20260604 0.1s done
+#19 DONE 104.3s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ycsjsimt2bjwuzs6j53dl02sz

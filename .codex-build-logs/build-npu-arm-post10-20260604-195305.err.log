@@ -1,0 +1,77 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.npu-builtin
+#1 transferring dockerfile: 3.87kB 0.1s done
+#1 DONE 0.4s
+
+#2 [internal] load metadata for docker.io/ascendai/pytorch:2.1.0-ubuntu22.04
+#2 DONE 2.5s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 575B done
+#3 DONE 0.3s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [ 1/15] FROM docker.io/ascendai/pytorch:2.1.0-ubuntu22.04@sha256:de2491b8afd410e27c4b80ac5a0e046edbeb9e574e5872a1709254cea44ccafc
+#5 resolve docker.io/ascendai/pytorch:2.1.0-ubuntu22.04@sha256:de2491b8afd410e27c4b80ac5a0e046edbeb9e574e5872a1709254cea44ccafc
+#5 resolve docker.io/ascendai/pytorch:2.1.0-ubuntu22.04@sha256:de2491b8afd410e27c4b80ac5a0e046edbeb9e574e5872a1709254cea44ccafc 0.6s done
+#5 DONE 0.7s
+
+#6 [ 2/15] WORKDIR /app
+#6 CACHED
+
+#7 [ 3/15] RUN sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.aliyun.com/ubuntu-ports|g' /etc/apt/sources.list 2>/dev/null;     sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.aliyun.com/ubuntu-ports|g' /etc/apt/sources.list.d/*.list 2>/dev/null;     true
+#7 CACHED
+
+#8 [ 4/15] RUN apt-get update && apt-get install -y --no-install-recommends     ffmpeg libsndfile1 && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [ 5/15] RUN pip install --no-cache-dir "numpy<2"     -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+#9 CACHED
+
+#4 [internal] load build context
+#4 ...
+
+#10 [ 6/15] RUN pip install --no-cache-dir torchaudio==2.1.0     --index-url https://download.pytorch.org/whl/cpu
+#10 CACHED
+
+#4 [internal] load build context
+#4 transferring context: 2.74kB 0.6s done
+#4 DONE 1.0s
+
+#11 [ 7/15] RUN pip install --no-cache-dir --force-reinstall --no-deps "torch-npu==${TORCH_NPU_VERSION}"     -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+#11 7.404 ERROR: Invalid requirement: 'torch-npu==': Expected end or semicolon (after name and no valid version specifier)
+#11 7.404     torch-npu==
+#11 7.404              ^
+#11 9.123 
+#11 9.123 [notice] A new release of pip is available: 24.1.2 -> 25.0.1
+#11 9.123 [notice] To update, run: pip install --upgrade pip
+#11 ERROR: process "/bin/bash -c pip install --no-cache-dir --force-reinstall --no-deps \"torch-npu==${TORCH_NPU_VERSION}\"     -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com" did not complete successfully: exit code: 1
+------
+ > [ 7/15] RUN pip install --no-cache-dir --force-reinstall --no-deps "torch-npu==${TORCH_NPU_VERSION}"     -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com:
+7.404 ERROR: Invalid requirement: 'torch-npu==': Expected end or semicolon (after name and no valid version specifier)
+7.404     torch-npu==
+7.404              ^
+9.123 
+9.123 [notice] A new release of pip is available: 24.1.2 -> 25.0.1
+9.123 [notice] To update, run: pip install --upgrade pip
+------
+Dockerfile.npu-builtin:20
+--------------------
+  19 |     
+  20 | >>> RUN pip install --no-cache-dir --force-reinstall --no-deps "torch-npu==${TORCH_NPU_VERSION}" \
+  21 | >>>     -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+  22 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/bash -c pip install --no-cache-dir --force-reinstall --no-deps \"torch-npu==${TORCH_NPU_VERSION}\"     -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com" did not complete successfully: exit code: 1
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/jr1tfmpxepeap6el87agw1xlt
+docker buildx build failed with exit code 1
+ËùÔÚÎ»ÖÃ D:\Docker\asr-funasr-leade-2\asrLeader-master\scripts\build_npu_arm_oldbase.ps1:22 ×Ö·û: 9
++         throw "$Name failed with exit code $LASTEXITCODE"
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (docker buildx b...ith exit code 1:String) [], RuntimeException
+    + FullyQualifiedErrorId : docker buildx build failed with exit code 1
+ 

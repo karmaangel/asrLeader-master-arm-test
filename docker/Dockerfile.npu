@@ -1,6 +1,14 @@
-FROM ascendai/pytorch:2.1.0-ubuntu22.04
+ARG NPU_BASE_IMAGE=ascendai/pytorch:2.1.0-ubuntu22.04
+ARG TORCH_NPU_VERSION=2.1.0.post10
+FROM ${NPU_BASE_IMAGE}
+
+ARG TORCH_NPU_VERSION=2.1.0.post10
 
 WORKDIR /app
+
+RUN sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.aliyun.com/ubuntu-ports|g' /etc/apt/sources.list 2>/dev/null; \
+    sed -i 's|http://ports.ubuntu.com/ubuntu-ports|https://mirrors.aliyun.com/ubuntu-ports|g' /etc/apt/sources.list.d/*.list 2>/dev/null; \
+    true
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg libsndfile1 && rm -rf /var/lib/apt/lists/*
@@ -11,23 +19,35 @@ RUN pip install --no-cache-dir "numpy<2" \
 RUN pip install --no-cache-dir torchaudio==2.1.0 \
     --index-url https://download.pytorch.org/whl/cpu
 
-COPY requirements-npu.txt .
-RUN TORCH_VER=$(python -c "import torch; print(torch.__version__.split('+')[0])") && \
-    echo "torch==${TORCH_VER}" > /tmp/constraints.txt && \
-    echo "torchaudio==2.1.0" >> /tmp/constraints.txt && \
-    cat /tmp/constraints.txt && \
-    pip install --no-cache-dir -r requirements-npu.txt \
-        -c /tmp/constraints.txt \
-        -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
-
-RUN python -c "import torch; import torch_npu; print('torch:', torch.__version__); print('torch_npu:', torch_npu.__version__); print('npu registered:', 'npu' in dir(torch))"
-
-COPY app/ ./app/
+RUN pip install --no-cache-dir --force-reinstall --no-deps "torch-npu==${TORCH_NPU_VERSION}" \
+    -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
 
 ENV ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/latest
 ENV ASCEND_OPP_PATH=/usr/local/Ascend/ascend-toolkit/latest/opp
 ENV ASCEND_AICPU_PATH=/usr/local/Ascend/ascend-toolkit/latest
 ENV TOOLCHAIN_HOME=/usr/local/Ascend/ascend-toolkit/latest/toolkit
+ENV LD_LIBRARY_PATH=/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/ascend-toolkit/latest/lib64:/usr/local/Ascend/ascend-toolkit/latest/lib64/plugin/opskernel:/usr/local/Ascend/ascend-toolkit/latest/lib64/plugin/nnengine:/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/devlib:/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/lib64:/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/lib64/stub:/usr/local/Ascend/ascend-toolkit/latest/runtime/lib64:/usr/local/Ascend/ascend-toolkit/latest/runtime/lib64/stub:/usr/local/Ascend/ascend-toolkit/latest/compiler/lib64:/usr/local/Ascend/ascend-toolkit/latest/hccl/lib64:/usr/local/Ascend/ascend-toolkit/latest/tools/aml/lib64:/usr/local/Ascend/atb/latest/atb/cxx_abi_1/lib
+ENV PYTHONPATH=/usr/local/Ascend/ascend-toolkit/latest/python/site-packages:/usr/local/Ascend/ascend-toolkit/latest/opp/built-in/op_impl/ai_core/tbe
+
+COPY requirements-npu.txt .
+RUN TORCH_VER=$(python -c "import torch; print(torch.__version__.split('+')[0])") && \
+    TORCH_NPU_VER=$(python -c "import importlib.metadata as m; print(m.version('torch-npu'))") && \
+    echo "torch==${TORCH_VER}" > /tmp/constraints.txt && \
+    echo "torchaudio==2.1.0" >> /tmp/constraints.txt && \
+    echo "torch-npu==${TORCH_NPU_VER}" >> /tmp/constraints.txt && \
+    cat /tmp/constraints.txt && \
+    pip install --no-cache-dir -r requirements-npu.txt \
+        -c /tmp/constraints.txt \
+        -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+
+RUN bash -lc "source /usr/local/Ascend/ascend-toolkit/set_env.sh 2>/dev/null || true; python -c \"import torch; import torch_npu; print('torch:', torch.__version__); print('torch_npu:', torch_npu.__version__); print('npu registered:', 'npu' in dir(torch))\""
+
+COPY app/ ./app/
+COPY docker/entrypoint.npu.sh /usr/local/bin/asr-npu-entrypoint.sh
+
+RUN sed -i 's/\r$//' /usr/local/bin/asr-npu-entrypoint.sh && \
+    chmod +x /usr/local/bin/asr-npu-entrypoint.sh
+
 ENV ASR_DEVICE=npu:0
 ENV MODELS_DIR=/models
 ENV DATA_DIR=/data
@@ -46,5 +66,5 @@ ENV MODELSCOPE_OFFLINE=1
 WORKDIR /app/app
 
 EXPOSE 8000
-ENTRYPOINT []
+ENTRYPOINT ["/usr/local/bin/asr-npu-entrypoint.sh"]
 CMD ["python", "server.py"]

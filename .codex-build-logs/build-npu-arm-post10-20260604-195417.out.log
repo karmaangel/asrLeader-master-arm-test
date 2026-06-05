@@ -1,0 +1,9 @@
+Building NPU ARM image
+  image: funasr-leader-asr:npu-ascend-oldbase-20260604
+  base : ascendai/pytorch:2.1.0-ubuntu22.04
+  torch-npu: 2.1.0.post10
+
+Done
+  image tar : D:\Docker\asr-funasr-leade-2\asrLeader-master\deploy\ascend-npu-oldbase-20260604\image\funasr-leader-asr-npu-ascend-oldbase-20260604.tar
+  package   : D:\Docker\asr-funasr-leade-2\asrLeader-master\ascend-npu-oldbase-20260604.tar
+  deploy dir: D:\Docker\asr-funasr-leade-2\asrLeader-master\deploy\ascend-npu-oldbase-20260604

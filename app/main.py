@@ -10,7 +10,7 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
-from typing import Any, List
+from typing import Any, List, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -224,12 +224,12 @@ async def health():
 @app.post("/transcribe")
 async def transcribe(
     file: UploadFile = File(...),
-    num_speakers: int | None = Form(default=None),
+    num_speakers: Optional[int] = Form(default=None),
     identify_leaders: bool = Form(default=True),
     leader_threshold: float = Form(default=config.LEADER_THRESHOLD),
     return_leader_scores: bool = Form(default=False),
     post_process: bool = Form(default=config.POSTPROCESS_ENABLED),
-    correct_text: bool | None = Form(default=None),
+    correct_text: Optional[bool] = Form(default=None),
     correction_mode: str = Form(default="auto"),
 ):
     path = await save_upload(file, "asr")
@@ -341,8 +341,8 @@ async def voiceprint_extract(file: UploadFile = File(...)):
 @app.post("/voiceprint/verify")
 async def voiceprint_verify(
     audio_a: UploadFile = File(...),
-    audio_b: UploadFile | None = File(default=None),
-    embedding: str | None = Form(default=None),
+    audio_b: Optional[UploadFile] = File(default=None),
+    embedding: Optional[str] = Form(default=None),
     threshold: float = Form(default=config.LEADER_THRESHOLD),
 ):
     if audio_b is None and embedding is None:

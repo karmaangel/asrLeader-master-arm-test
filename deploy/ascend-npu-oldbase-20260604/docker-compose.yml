@@ -1,0 +1,38 @@
+services:
+  asr-leader-npu:
+    image: funasr-leader-asr:npu-ascend-oldbase-20260604
+    container_name: asr-leader-npu
+    restart: unless-stopped
+    privileged: true
+    ipc: host
+    shm_size: "8g"
+    ports:
+      - "8000:8000"
+    environment:
+      - ASR_DEVICE=npu:0
+      - MODELS_DIR=/app/models
+      - DATA_DIR=/data
+      - POSTPROCESS_ENABLED=true
+      - POSTPROCESS_PRELOAD=true
+      - POSTPROCESS_DEVICE=npu:0
+      - POSTPROCESS_MODEL=Qwen/Qwen2.5-1.5B-Instruct
+      - POSTPROCESS_MODEL_DIR=/app/models/Qwen2.5-1.5B-Instruct
+      - POSTPROCESS_WORKERS=1
+      - POSTPROCESS_SYNC_MAX_CHARS=1200
+      - POSTPROCESS_SYNC_TIMEOUT_SECONDS=120
+      - CORRECTION_TASK_WORKERS=1
+      - TRANSFORMERS_OFFLINE=1
+      - MODELSCOPE_OFFLINE=1
+      - ASR_NORMALIZE_ASCEND_DEVICES=false
+      - ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/latest
+      - ASCEND_OPP_PATH=/usr/local/Ascend/ascend-toolkit/latest/opp
+      - ASCEND_AICPU_PATH=/usr/local/Ascend/ascend-toolkit/latest
+      - TOOLCHAIN_HOME=/usr/local/Ascend/ascend-toolkit/latest/toolkit
+    devices:
+      - /dev/davinci0:/dev/davinci0
+      - /dev/davinci_manager:/dev/davinci_manager
+      - /dev/devmm_svm:/dev/devmm_svm
+      - /dev/hisi_hdc:/dev/hisi_hdc
+    volumes:
+      - /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro
+      - ./data:/data

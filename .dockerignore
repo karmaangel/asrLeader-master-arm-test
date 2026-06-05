@@ -13,6 +13,8 @@ data/modelscope-cache/hub/models/Qwen/*
 *.tar.part-*
 deploy/ascend-npu/image/
 deploy/ascend-npu/data/
+deploy/*/image/
+deploy/*/data/
 *.zip
 __pycache__/
 *.pyc
