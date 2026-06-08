@@ -1,0 +1,250 @@
+name: Build ARM64 CPU Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version suffix, for example 20260608"
+        required: true
+        default: "20260608"
+      runner:
+        description: "ARM64 runner label"
+        required: true
+        default: "ubuntu-24.04-arm"
+      publish_ghcr:
+        description: "Push image to GitHub Container Registry"
+        required: true
+        type: boolean
+        default: false
+      publish_release:
+        description: "Publish split offline package to a GitHub Release"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 240
+    env:
+      VERSION: ${{ inputs.version }}
+      LOCAL_IMAGE: funasr-leader-asr:cpu-arm64-${{ inputs.version }}
+      IMAGE_TAR: funasr-leader-asr-cpu-arm64-${{ inputs.version }}.tar
+      PACKAGE_TAR: asr-leader-cpu-arm64-offline-${{ inputs.version }}.tar
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Initialize build metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          ghcr_image="ghcr.io/${GITHUB_REPOSITORY,,}:cpu-arm64-${VERSION}"
+          echo "GHCR_IMAGE=${ghcr_image}" >> "${GITHUB_ENV}"
+          echo "Version: ${VERSION}"
+          echo "Local image: ${LOCAL_IMAGE}"
+          echo "GHCR image: ${ghcr_image}"
+          uname -a
+          docker version
+          docker info
+          df -h
+
+      - name: Build ARM64 CPU image
+        shell: bash
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: |
+          set -euo pipefail
+          docker build \
+            --pull \
+            --platform linux/arm64 \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            -f docker/Dockerfile.cpu \
+            -t "${LOCAL_IMAGE}" \
+            .
+          docker image inspect "${LOCAL_IMAGE}" --format '{{.Id}} {{.Architecture}} {{.Os}}'
+          test "$(docker image inspect "${LOCAL_IMAGE}" --format '{{.Architecture}}')" = "arm64"
+
+      - name: Smoke test ARM64 imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --platform linux/arm64 "${LOCAL_IMAGE}" python - <<'PY'
+          import platform
+          import torch
+          import torchaudio
+          import fastapi
+          import funasr
+          import modelscope
+          from server import app
+
+          machine = platform.machine()
+          print("machine:", machine)
+          print("torch:", torch.__version__)
+          print("torchaudio:", torchaudio.__version__)
+          print("fastapi:", fastapi.__version__)
+          print("app:", app.title)
+          assert machine in {"aarch64", "arm64"}
+          PY
+
+      - name: Push image to GHCR
+        if: ${{ inputs.publish_ghcr }}
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+          docker tag "${LOCAL_IMAGE}" "${GHCR_IMAGE}"
+          docker push "${GHCR_IMAGE}"
+
+      - name: Create split offline package
+        if: ${{ inputs.publish_release }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dist_dir="${PWD}/dist"
+          pkg_root="${PWD}/package-root"
+          pkg_dir="${pkg_root}/asr-leader-cpu-arm64"
+          rm -rf "${dist_dir}" "${pkg_root}"
+          mkdir -p "${dist_dir}" "${pkg_dir}/image" "${pkg_dir}/data" "${pkg_dir}/models"
+
+          docker save -o "${pkg_dir}/image/${IMAGE_TAR}" "${LOCAL_IMAGE}"
+          (
+            cd "${pkg_dir}"
+            sha256sum "image/${IMAGE_TAR}" > SHA256SUMS.txt
+          )
+
+          cat > "${pkg_dir}/docker-compose.yml" <<EOF
+          services:
+            asr-leader-cpu:
+              image: ${LOCAL_IMAGE}
+              ports:
+                - "\${ASR_PORT:-8000}:8000"
+              environment:
+                - ASR_DEVICE=cpu
+                - MODELS_DIR=/models
+                - DATA_DIR=/data
+                - POSTPROCESS_ENABLED=\${POSTPROCESS_ENABLED:-false}
+                - POSTPROCESS_PRELOAD=false
+              volumes:
+                - ./models:/models:ro
+                - ./data:/data
+              restart: unless-stopped
+          EOF
+
+          cat > "${pkg_dir}/load_image.sh" <<EOF
+          #!/usr/bin/env bash
+          set -euo pipefail
+          cd "\$(dirname "\$0")"
+          docker load -i "image/${IMAGE_TAR}"
+          EOF
+
+          cat > "${pkg_dir}/start.sh" <<EOF
+          #!/usr/bin/env bash
+          set -euo pipefail
+          cd "\$(dirname "\$0")"
+          if ! docker image inspect "${LOCAL_IMAGE}" >/dev/null 2>&1; then
+            ./load_image.sh
+          fi
+          docker compose up -d
+          docker compose logs -f
+          EOF
+
+          cat > "${pkg_dir}/arm_smoke.sh" <<EOF
+          #!/usr/bin/env bash
+          set -euo pipefail
+          docker run --rm --platform linux/arm64 "${LOCAL_IMAGE}" python - <<'PY'
+          import platform, torch, torchaudio
+          from server import app
+          print("machine:", platform.machine())
+          print("torch:", torch.__version__)
+          print("torchaudio:", torchaudio.__version__)
+          print("app:", app.title)
+          PY
+          EOF
+
+          cat > "${pkg_dir}/README.md" <<EOF
+          # ASR Leader CPU ARM64 package
+
+          This package is for testing the linux/arm64 CPU image only. It does not
+          require Ascend devices or Ascend runtime libraries.
+
+          Image:
+
+          \`\`\`text
+          ${LOCAL_IMAGE}
+          \`\`\`
+
+          To load and smoke-test the image:
+
+          \`\`\`bash
+          sha256sum -c SHA256SUMS.txt
+          ./load_image.sh
+          ./arm_smoke.sh
+          \`\`\`
+
+          To run the API with real ASR models, copy the model directories into
+          \`./models\` before running \`./start.sh\`.
+          EOF
+
+          chmod +x "${pkg_dir}"/*.sh
+
+          tar -C "${pkg_root}" -cf - asr-leader-cpu-arm64 \
+            | tee >(sha256sum | awk -v file="${PACKAGE_TAR}" '{print $1 "  " file}' > "${dist_dir}/${PACKAGE_TAR}.sha256") \
+            | split -b 1900m -d -a 3 - "${dist_dir}/${PACKAGE_TAR}.part-"
+
+          ls -lh "${dist_dir}"
+
+      - name: Publish offline package release
+        if: ${{ inputs.publish_release }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          tag="cpu-arm64-${VERSION}"
+          notes_file="dist/release-notes.md"
+          cat > "${notes_file}" <<EOF
+          CPU ARM64 offline package ${VERSION}
+
+          Image tag inside package:
+
+            ${LOCAL_IMAGE}
+
+          GHCR image, if publish_ghcr was enabled:
+
+            ${GHCR_IMAGE}
+
+          Rebuild the offline tar on Linux:
+
+            cat ${PACKAGE_TAR}.part-* > ${PACKAGE_TAR}
+            sha256sum -c ${PACKAGE_TAR}.sha256
+            tar -xf ${PACKAGE_TAR}
+            cd asr-leader-cpu-arm64
+            chmod +x *.sh
+            ./load_image.sh
+            ./arm_smoke.sh
+
+          This package tests linux/arm64 CPU compatibility only. It does not
+          require Ascend NPU devices.
+          EOF
+
+          assets=(dist/${PACKAGE_TAR}.part-* "dist/${PACKAGE_TAR}.sha256")
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            gh release upload "${tag}" "${assets[@]}" --clobber
+          else
+            gh release create "${tag}" "${assets[@]}" \
+              --target "${GITHUB_SHA}" \
+              --title "CPU ARM64 offline package ${VERSION}" \
+              --notes-file "${notes_file}"
+          fi
+
+          gh release view "${tag}" --json url --jq .url
