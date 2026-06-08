@@ -14,7 +14,7 @@ on:
       startup_timeout_seconds:
         description: "How long to wait for model download/load and API startup"
         required: true
-        default: "2400"
+        default: "7200"
 
 permissions:
   contents: read
@@ -22,7 +22,7 @@ permissions:
 jobs:
   test:
     runs-on: ${{ inputs.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 180
     env:
       VERSION: ${{ inputs.version }}
       LOCAL_IMAGE: funasr-leader-asr:cpu-arm64-${{ inputs.version }}
@@ -77,11 +77,23 @@ jobs:
           docker image inspect "${LOCAL_IMAGE}" --format '{{.Id}} {{.Architecture}} {{.Os}}'
           test "$(docker image inspect "${LOCAL_IMAGE}" --format '{{.Architecture}}')" = "arm64"
 
+      - name: Prepare runtime directories
+        shell: bash
+        run: |
+          mkdir -p results runtime/data runtime/models runtime/modelscope-cache
+
+      - name: Restore ModelScope cache
+        uses: actions/cache/restore@v4
+        with:
+          path: runtime/modelscope-cache
+          key: modelscope-arm64-asr-${{ inputs.version }}-${{ github.run_id }}
+          restore-keys: |
+            modelscope-arm64-asr-${{ inputs.version }}-
+
       - name: Start ARM64 API container
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p results runtime/data runtime/models runtime/modelscope-cache
 
           docker run -d \
             --name asr-arm-test \
@@ -164,6 +176,19 @@ jobs:
           docker ps -a > results/docker-ps.txt || true
           du -sh runtime/modelscope-cache > results/modelscope-cache-size.txt 2>&1 || true
 
+      - name: Stop container
+        if: always()
+        shell: bash
+        run: |
+          docker rm -f asr-arm-test >/dev/null 2>&1 || true
+
+      - name: Save ModelScope cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: runtime/modelscope-cache
+          key: modelscope-arm64-asr-${{ inputs.version }}-${{ github.run_id }}
+
       - name: Upload recognition results
         if: always()
         uses: actions/upload-artifact@v4
@@ -172,9 +197,3 @@ jobs:
           path: |
             results/**
           if-no-files-found: warn
-
-      - name: Stop container
-        if: always()
-        shell: bash
-        run: |
-          docker rm -f asr-arm-test >/dev/null 2>&1 || true
