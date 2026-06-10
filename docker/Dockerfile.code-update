@@ -1,0 +1,4 @@
+ARG BASE_IMAGE=funasr-leader-asr:cpu
+FROM ${BASE_IMAGE}
+
+COPY app/ /app/app/

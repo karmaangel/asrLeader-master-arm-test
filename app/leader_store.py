@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import math
 import threading
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -20,6 +19,10 @@ def cosine_similarity(a: list[float], b: list[float]) -> float:
     if norm_a == 0 or norm_b == 0:
         raise ValueError("embedding cannot be a zero vector")
     return dot / (norm_a * norm_b)
+
+
+class LeaderAlreadyExistsError(ValueError):
+    pass
 
 
 class LeaderStore:
@@ -60,24 +63,35 @@ class LeaderStore:
             )
         return leaders
 
-    def create_leader(self, embeddings: list[tuple[list[float], str | None]]) -> dict[str, Any]:
-        leader_id = str(uuid.uuid4())
+    def exists(self, leader_id: str) -> bool:
+        return leader_id in self._read()["leaders"]
+
+    def create_leader(
+        self,
+        leader_id: str,
+        embeddings: list[tuple[list[float], str | None]],
+    ) -> dict[str, Any]:
+        if not leader_id:
+            raise ValueError("leader_id is required")
         now = datetime.now(timezone.utc).isoformat()
-        data = self._read()
-        data["leaders"][leader_id] = {
-            "created_at": now,
-            "updated_at": now,
-            "samples": [
-                {
-                    "embedding": embedding,
-                    "source": source,
-                    "created_at": now,
-                    "dimension": len(embedding),
-                }
-                for embedding, source in embeddings
-            ],
-        }
-        self._write(data)
+        with self._lock:
+            data = self._read()
+            if leader_id in data["leaders"]:
+                raise LeaderAlreadyExistsError(leader_id)
+            data["leaders"][leader_id] = {
+                "created_at": now,
+                "updated_at": now,
+                "samples": [
+                    {
+                        "embedding": embedding,
+                        "source": source,
+                        "created_at": now,
+                        "dimension": len(embedding),
+                    }
+                    for embedding, source in embeddings
+                ],
+            }
+            self._write(data)
         dimensions = sorted({len(embedding) for embedding, _ in embeddings})
         return {
             "leader_id": leader_id,

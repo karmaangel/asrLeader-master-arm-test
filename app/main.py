@@ -3,11 +3,15 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import math
 import os
+import subprocess
 import tempfile
 import threading
 import time
 import uuid
+import wave
+from array import array
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from typing import Any, List, Optional
@@ -17,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 import config
-from leader_store import LeaderStore, cosine_similarity
+from leader_store import LeaderAlreadyExistsError, LeaderStore, cosine_similarity
 from model_service import FunASRService
 from post_processor import TranscriptPostProcessor
 
@@ -173,17 +177,162 @@ def normalize_correction_mode(value: str) -> str:
     raise HTTPException(status_code=400, detail="correction_mode must be auto, sync, async, or none")
 
 
+def validate_similarity_threshold(value: float, field_name: str = "threshold") -> float:
+    if not 0.0 <= value <= 1.0:
+        raise HTTPException(status_code=400, detail=f"{field_name} must be between 0 and 1")
+    return value
+
+
+def normalize_leader_id(value: str) -> str:
+    leader_id = value.strip()
+    if not leader_id:
+        raise HTTPException(status_code=400, detail="id不能为空")
+    if len(leader_id) > 128:
+        raise HTTPException(status_code=400, detail="id长度不能超过128个字符")
+    if any(ord(char) < 32 for char in leader_id):
+        raise HTTPException(status_code=400, detail="id不能包含控制字符")
+    return leader_id
+
+
+def effective_speech_seconds(path: str) -> float:
+    chunk_ms = 20
+    active_chunks = 0
+    with wave.open(path, "rb") as audio:
+        sample_rate = audio.getframerate()
+        frames_per_chunk = max(1, sample_rate * chunk_ms // 1000)
+        while data := audio.readframes(frames_per_chunk):
+            samples = array("h")
+            samples.frombytes(data)
+            if not samples:
+                continue
+            rms = math.sqrt(sum(sample * sample for sample in samples) / len(samples))
+            dbfs = 20 * math.log10(max(rms, 1.0) / 32768.0)
+            if dbfs >= config.LEADER_ENROLLMENT_SPEECH_DBFS:
+                active_chunks += 1
+    return round(active_chunks * chunk_ms / 1000.0, 2)
+
+
+def validate_enrollment_samples(
+    samples: list[tuple[list[float], str | None, float]],
+) -> dict[str, Any]:
+    issues: list[dict[str, Any]] = []
+    short_samples = [
+        {"source": source, "speech_seconds": speech_seconds}
+        for _, source, speech_seconds in samples
+        if speech_seconds < config.LEADER_ENROLLMENT_MIN_SPEECH_SECONDS
+    ]
+    if short_samples:
+        issues.append(
+            {
+                "message": "声纹样本中的有效语音时长不足",
+                "minimum_speech_seconds": config.LEADER_ENROLLMENT_MIN_SPEECH_SECONDS,
+                "samples": short_samples,
+            }
+        )
+
+    pair_scores: list[dict[str, Any]] = []
+    best_by_sample = [-1.0] * len(samples)
+    for left in range(len(samples)):
+        for right in range(left + 1, len(samples)):
+            score = cosine_similarity(samples[left][0], samples[right][0])
+            best_by_sample[left] = max(best_by_sample[left], score)
+            best_by_sample[right] = max(best_by_sample[right], score)
+            pair_scores.append(
+                {
+                    "left": samples[left][1],
+                    "right": samples[right][1],
+                    "score": round(score, 5),
+                }
+            )
+
+    minimum_best_score = min(best_by_sample)
+    if minimum_best_score < config.LEADER_ENROLLMENT_MIN_SIMILARITY:
+        issues.append(
+            {
+                "message": "上传的声纹样本相似度过低，可能不是同一个人，或录音设备、环境差异过大",
+                "minimum_similarity": config.LEADER_ENROLLMENT_MIN_SIMILARITY,
+                "minimum_best_score": round(minimum_best_score, 5),
+                "pairs": pair_scores,
+            }
+        )
+    if issues:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "声纹注册质量校验失败",
+                "issues": issues,
+            },
+        )
+    return {
+        "minimum_best_score": round(minimum_best_score, 5),
+        "pairs": pair_scores,
+    }
+
+
 async def save_upload(file: UploadFile, prefix: str) -> str:
+    filename = file.filename or ""
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in config.ALLOWED_AUDIO_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "不支持的音频格式",
+                "file_name": filename or None,
+                "allowed_formats": config.ALLOWED_AUDIO_FORMATS,
+            },
+        )
+
     content = await file.read()
     if not content:
-        raise HTTPException(status_code=400, detail="empty audio file")
+        raise HTTPException(status_code=400, detail="上传的音频文件为空")
     if len(content) > config.MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail=f"file is larger than {config.MAX_FILE_SIZE} bytes")
-    ext = os.path.splitext(file.filename or "audio.wav")[1] or ".wav"
-    path = os.path.join(tempfile.gettempdir(), f"{prefix}_{uuid.uuid4().hex}{ext}")
-    with open(path, "wb") as f:
+        raise HTTPException(
+            status_code=400,
+            detail=f"音频文件超过大小限制，最大允许 {config.MAX_FILE_SIZE} 字节",
+        )
+    upload_id = uuid.uuid4().hex
+    source_path = os.path.join(tempfile.gettempdir(), f"{prefix}_{upload_id}{ext}")
+    normalized_path = os.path.join(tempfile.gettempdir(), f"{prefix}_{upload_id}_16k.wav")
+    with open(source_path, "wb") as f:
         f.write(content)
-    return path
+    command = [
+        "ffmpeg",
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-i",
+        source_path,
+        "-vn",
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
+        "-c:a",
+        "pcm_s16le",
+        normalized_path,
+    ]
+    try:
+        completed = subprocess.run(command, check=True, capture_output=True, text=True)
+        if completed.stderr:
+            logger.warning("Audio normalization warning for %s: %s", file.filename, completed.stderr.strip())
+        return normalized_path
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=500, detail="服务器未安装 ffmpeg，无法处理音频") from exc
+    except subprocess.CalledProcessError as exc:
+        error = (exc.stderr or "unsupported or damaged audio").strip()
+        logger.warning("Audio normalization failed for %s: %s", file.filename, error)
+        try:
+            os.remove(normalized_path)
+        except OSError:
+            pass
+        raise HTTPException(status_code=400, detail="音频文件无效、已损坏或内容与扩展名不一致") from exc
+    finally:
+        try:
+            os.remove(source_path)
+        except OSError:
+            pass
 
 
 def parse_embedding(raw: str) -> list[float]:
@@ -225,6 +374,7 @@ async def health():
 async def transcribe(
     file: UploadFile = File(...),
     num_speakers: Optional[int] = Form(default=None),
+    hotwords: Optional[str] = Form(default=None),
     identify_leaders: bool = Form(default=True),
     leader_threshold: float = Form(default=config.LEADER_THRESHOLD),
     return_leader_scores: bool = Form(default=False),
@@ -232,10 +382,17 @@ async def transcribe(
     correct_text: Optional[bool] = Form(default=None),
     correction_mode: str = Form(default="auto"),
 ):
+    leader_threshold = validate_similarity_threshold(leader_threshold, "leader_threshold")
     path = await save_upload(file, "asr")
     try:
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(executor, asr_service.transcribe, path, num_speakers)
+        result = await loop.run_in_executor(
+            executor,
+            asr_service.transcribe,
+            path,
+            num_speakers,
+            hotwords,
+        )
         if identify_leaders:
             result = await loop.run_in_executor(
                 executor,
@@ -287,21 +444,38 @@ async def correction_result(task_id: str):
 
 @app.post("/leaders/enroll")
 async def enroll_leader(
-    files: List[UploadFile] = File(..., description="Upload at least two voiceprint audio files."),
+    leader_id: str = Form(..., alias="id", description="业务系统中的用户唯一ID。"),
+    files: List[UploadFile] = File(..., description="请至少上传两个声纹音频文件。"),
 ):
+    leader_id = normalize_leader_id(leader_id)
+    if leader_store.exists(leader_id):
+        raise HTTPException(status_code=409, detail="当前用户的声纹信息已存在")
     if len(files) < 2:
-        raise HTTPException(status_code=400, detail="at least two voiceprint files are required")
+        raise HTTPException(status_code=400, detail="至少需要上传两个声纹音频文件")
 
     paths: list[str] = []
     try:
         loop = asyncio.get_event_loop()
-        embeddings: list[tuple[list[float], str | None]] = []
+        samples: list[tuple[list[float], str | None, float]] = []
         for file in files:
             path = await save_upload(file, "leader")
             paths.append(path)
+            speech_seconds = effective_speech_seconds(path)
             embedding = await loop.run_in_executor(executor, asr_service.extract_voiceprint, path)
-            embeddings.append((embedding, file.filename))
-        item = leader_store.create_leader(embeddings)
+            samples.append((embedding, file.filename, speech_seconds))
+        quality = validate_enrollment_samples(samples)
+        embeddings = [(embedding, source) for embedding, source, _ in samples]
+        try:
+            item = leader_store.create_leader(leader_id, embeddings)
+        except LeaderAlreadyExistsError as exc:
+            raise HTTPException(status_code=409, detail="当前用户的声纹信息已存在") from exc
+        item["quality"] = {
+            "samples": [
+                {"source": source, "speech_seconds": speech_seconds}
+                for _, source, speech_seconds in samples
+            ],
+            **quality,
+        }
         return ok(item)
     finally:
         for path in paths:
@@ -345,6 +519,7 @@ async def voiceprint_verify(
     embedding: Optional[str] = Form(default=None),
     threshold: float = Form(default=config.LEADER_THRESHOLD),
 ):
+    threshold = validate_similarity_threshold(threshold)
     if audio_b is None and embedding is None:
         raise HTTPException(status_code=400, detail="provide audio_b or embedding")
     if audio_b is not None and embedding is not None:

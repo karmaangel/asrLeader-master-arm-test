@@ -5,6 +5,7 @@ import logging
 import re
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
@@ -208,11 +209,23 @@ class TranscriptPostProcessor:
             text = item.get("text")
             if not isinstance(text, str):
                 return original
-            if len(text) > max(40, len(original[index]) * 3):
-                corrected.append(original[index])
-            else:
-                corrected.append(text.strip())
+            text = text.strip()
+            corrected.append(text if self._is_safe_correction(original[index], text) else original[index])
         return corrected
+
+    @staticmethod
+    def _is_safe_correction(original: str, corrected: str) -> bool:
+        if not original:
+            return not corrected
+        if not corrected:
+            return False
+        if re.findall(r"\d+(?:\.\d+)?", original) != re.findall(r"\d+(?:\.\d+)?", corrected):
+            return False
+        minimum_length = max(1, int(len(original) * 0.60))
+        maximum_length = max(len(original) + 20, int(len(original) * 1.50))
+        if not minimum_length <= len(corrected) <= maximum_length:
+            return False
+        return SequenceMatcher(None, original, corrected).ratio() >= 0.55
 
     @staticmethod
     def _parse_json_array(raw: str) -> Any:
@@ -233,8 +246,7 @@ class TranscriptPostProcessor:
 
     @staticmethod
     def _contextual_fallback(text: str, full_text: str) -> str:
-        if "四月七年前" in text and "清明" in full_text:
-            return text.replace("四月七年前", "清明前")
+        del full_text
         return text
 
     @staticmethod
@@ -264,13 +276,12 @@ class TranscriptPostProcessor:
             {
                 "role": "system",
                 "content": (
-                    "你是中文会议语音转写的后处理器。只根据上下文修正明显的 ASR "
-                    "错字、同音误识别、时间表达错误和不通顺短语。不要总结，不要扩写，"
-                    "不要改变原意，不要改数字、姓名、术语，除非上下文强烈支持。"
+                    "你是中文会议语音转写的校对器。只根据上下文修正明确的 ASR "
+                    "错字、同音误识别和不通顺短语。不得总结、扩写、删减事实或改变原意；"
+                    "不得修改数字、人名、单位名和专业术语，除非上下文提供了明确依据。"
                     "保留分段数量和 id，只输出 JSON 数组，格式为 "
                     '[{"id":0,"text":"修正后的文本"}]。'
-                    "如果上下文反复出现清明、清明前、上线等内容，像“四月七年前”"
-                    "这种不通顺片段应按上下文优先修正为“清明前”。"
+                    "没有把握时必须保留原文。"
                 ),
             },
             {
