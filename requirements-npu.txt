@@ -1,6 +1,10 @@
 funasr>=1.3.2
 modelscope
 numpy<2
+attrs
+cloudpickle
+ml-dtypes
+tornado
 soundfile>=0.12.0
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
