@@ -90,6 +90,7 @@ jobs:
           print("python:", sys.version)
           print("machine:", platform.machine())
           print("cwd:", os.getcwd())
+          print("sys.path:", sys.path)
 
           for name in [
               "torch",
@@ -131,6 +132,7 @@ jobs:
             -e POSTPROCESS_ENABLED=false \
             -e POSTPROCESS_PRELOAD=false \
             -e ASR_DEVICE=npu:0 \
+            -e PYTHONPATH=/app/app \
             -v /tmp/asr_npu_smoke.py:/tmp/asr_npu_smoke.py:ro \
             "${LOCAL_IMAGE}" \
             bash -lc 'cd /app/app && python /tmp/asr_npu_smoke.py'
