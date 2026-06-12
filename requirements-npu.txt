@@ -11,3 +11,7 @@ accelerate
 safetensors==0.4.5
 soundfile==0.13.1
 numpy<2
+attrs
+cloudpickle
+ml-dtypes
+tornado
