@@ -59,6 +59,8 @@ class FunASRService:
         logger.info("PUNC=%s", config.PUNC_MODEL)
         logger.info("SPK=%s", config.SPK_MODEL)
         logger.info("DEVICE=%s", self.device)
+        if str(self.device).startswith("npu"):
+            import torch_npu  # noqa: F401
         self.model = AutoModel(
             model=config.ASR_MODEL,
             vad_model=config.VAD_MODEL,
@@ -148,6 +150,8 @@ class FunASRService:
             match = speaker_matches.get(segment["speaker"])
             if match:
                 self._mark_leader(segment, match)
+        if config.LEADER_MERGE_MATCHED_SPEAKERS:
+            self._merge_matched_leader_speakers(segments, speaker_matches)
         return segments
 
     def _identify_speakers(
@@ -197,27 +201,36 @@ class FunASRService:
                 except OSError:
                     pass
 
-        assigned_speakers: set[str] = set()
-        matches: dict[str, dict[str, Any]] = {}
-        winners: list[dict[str, Any]] = []
-        for _, candidates in leader_candidates.items():
-            candidates.sort(key=lambda item: item["score"], reverse=True)
-            best = candidates[0]
-            runner_up = candidates[1]["score"] if len(candidates) > 1 else -1.0
-            best["meeting_margin"] = round(best["score"] - runner_up, 5)
-            if self._candidate_wins_meeting(best, runner_up):
-                winners.append(best)
+        return self._select_leader_matches(leader_candidates)
 
-        for candidate in sorted(winners, key=lambda item: item["score"], reverse=True):
+    def _select_leader_matches(
+        self,
+        leader_candidates: dict[str, list[dict[str, Any]]],
+    ) -> dict[str, dict[str, Any]]:
+        candidates = [
+            candidate
+            for leader_items in leader_candidates.values()
+            for candidate in leader_items
+        ]
+        candidates.sort(
+            key=lambda item: (
+                item["score"],
+                item["speaker_score"],
+                item["support_segments"],
+            ),
+            reverse=True,
+        )
+
+        matches: dict[str, dict[str, Any]] = {}
+        for candidate in candidates:
             speaker = candidate["speaker"]
-            if speaker in assigned_speakers:
+            if speaker in matches:
                 continue
             matches[speaker] = {
                 "leader_id": candidate["leader_id"],
                 "score": candidate["score"],
                 "confidence": self._confidence_label(candidate),
             }
-            assigned_speakers.add(speaker)
         return matches
 
     def _speaker_segment_evidence(
@@ -280,20 +293,30 @@ class FunASRService:
             if candidate["support_segments"] >= 2 and candidate["score"] >= config.LEADER_SEGMENT_THRESHOLD:
                 return True
 
-        return (
-            candidate["speaker_rank"] == 0
-            and candidate["speaker_score"] >= config.LEADER_RELATIVE_MIN_SCORE
-            and candidate["speaker_margin"] >= config.LEADER_RELATIVE_MARGIN
-            and candidate["support_segments"] >= config.LEADER_RELATIVE_SUPPORT_SEGMENTS
-        )
+        if (
+            candidate["speaker_rank"] != 0
+            or candidate["speaker_score"] < config.LEADER_RELATIVE_MIN_SCORE
+        ):
+            return False
 
-    def _candidate_wins_meeting(self, candidate: dict[str, Any], runner_up: float) -> bool:
-        if runner_up < 0:
+        if (
+            candidate["speaker_margin"] >= config.LEADER_RELATIVE_MARGIN
+            and candidate["support_segments"] >= config.LEADER_RELATIVE_SUPPORT_SEGMENTS
+        ):
             return True
-        adaptive_gap = max(config.LEADER_SCORE_MARGIN, min(0.12, candidate["score"] * 0.18))
-        if candidate["score"] - runner_up >= adaptive_gap:
+
+        if (
+            candidate["speaker_score"] >= config.LEADER_SPEAKER_THRESHOLD
+            and candidate["speaker_margin"] >= config.LEADER_RELATIVE_MARGIN
+            and candidate["support_segments"] >= config.LEADER_SHORT_SUPPORT_SEGMENTS
+        ):
             return True
-        return candidate["support_segments"] >= 2 and candidate["score"] - runner_up >= config.LEADER_SCORE_MARGIN
+
+        return (
+            candidate["score"] >= config.LEADER_STRONG_SUPPORT_MIN_SCORE
+            and candidate["speaker_margin"] >= config.LEADER_STRONG_SUPPORT_MARGIN
+            and candidate["support_segments"] >= config.LEADER_STRONG_SUPPORT_SEGMENTS
+        )
 
     @staticmethod
     def _confidence_label(candidate: dict[str, Any]) -> str:
@@ -306,6 +329,36 @@ class FunASRService:
     def _mark_leader(self, segment: dict[str, Any], match: dict[str, Any]) -> None:
         segment["is_leader"] = True
         segment["leader_id"] = match["leader_id"]
+
+    @staticmethod
+    def _merge_matched_leader_speakers(
+        segments: list[dict[str, Any]],
+        speaker_matches: dict[str, dict[str, Any]],
+    ) -> None:
+        speakers_by_leader: dict[str, list[str]] = {}
+        for speaker, match in speaker_matches.items():
+            speakers_by_leader.setdefault(match["leader_id"], []).append(speaker)
+
+        aliases: dict[str, str] = {}
+        for speakers in speakers_by_leader.values():
+            if len(speakers) < 2:
+                continue
+            canonical = max(
+                speakers,
+                key=lambda speaker: speaker_matches[speaker]["score"],
+            )
+            for speaker in speakers:
+                aliases[speaker] = canonical
+
+        if not aliases:
+            return
+
+        roots_in_order: list[str] = []
+        for segment in segments:
+            speaker = aliases.get(segment["speaker"], segment["speaker"])
+            if speaker not in roots_in_order:
+                roots_in_order.append(speaker)
+            segment["speaker"] = str(roots_in_order.index(speaker))
 
     def _extract_clip(self, audio_path: str, start: float, end: float) -> str:
         start = max(0.0, start - config.SEGMENT_PADDING_MS / 1000.0)

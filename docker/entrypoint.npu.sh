@@ -56,6 +56,19 @@ prepend_env_path LD_LIBRARY_PATH /usr/local/Ascend/atb/latest/atb/cxx_abi_1/lib
 prepend_env_path PYTHONPATH "${ASCEND_HOME_PATH}/python/site-packages"
 prepend_env_path PYTHONPATH "${ASCEND_OPP_PATH}/built-in/op_impl/ai_core/tbe"
 
+# FunASR 1.3.1 in the working production image loads ASR models through the
+# ModelScope registry/cache aliases. Resolving aliases to /app/models paths
+# makes it fail with "is not registered".
+export ASR_RESOLVE_LOCAL_MODELS="${ASR_RESOLVE_LOCAL_MODELS:-false}"
+
+if [ "${POSTPROCESS_PRELOAD:-false}" = "true" ]; then
+  postprocess_model_dir="${POSTPROCESS_MODEL_DIR:-}"
+  if [ -n "$postprocess_model_dir" ] && [ ! -d "$postprocess_model_dir" ]; then
+    export POSTPROCESS_PRELOAD=false
+    echo "Disabled post-process preload: missing ${postprocess_model_dir}"
+  fi
+fi
+
 # The old production pod worked with ASCEND_VISIBLE_DEVICES set to the physical
 # NPU id from the device plugin. Keep that default and only normalize when
 # explicitly requested.
@@ -86,6 +99,6 @@ if [ "$normalize" != "false" ] && [ -n "$visible_devices" ]; then
   fi
 fi
 
-echo "ASR NPU runtime: ASR_DEVICE=${ASR_DEVICE:-} ASCEND_VISIBLE_DEVICES=${ASCEND_VISIBLE_DEVICES:-} ASCEND_RT_VISIBLE_DEVICES=${ASCEND_RT_VISIBLE_DEVICES:-}"
+echo "ASR NPU runtime: ASR_DEVICE=${ASR_DEVICE:-} ASCEND_VISIBLE_DEVICES=${ASCEND_VISIBLE_DEVICES:-} ASCEND_RT_VISIBLE_DEVICES=${ASCEND_RT_VISIBLE_DEVICES:-} ASR_RESOLVE_LOCAL_MODELS=${ASR_RESOLVE_LOCAL_MODELS:-} POSTPROCESS_PRELOAD=${POSTPROCESS_PRELOAD:-}"
 
 exec "$@"

@@ -15,6 +15,9 @@ deploy/ascend-npu/image/
 deploy/ascend-npu/data/
 deploy/*/image/
 deploy/*/data/
+deploy/ascend-npu-async-builtin-*/
+deploy/ascend-npu-oldbase-*/
+deploy/asr-leader-npu-prod-oldbase-*/
 *.zip
 __pycache__/
 *.pyc

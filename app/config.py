@@ -15,20 +15,29 @@ def _bool_env(key: str, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+RESOLVE_LOCAL_ASR_MODELS = _bool_env("ASR_RESOLVE_LOCAL_MODELS", True)
+
+ASR_MODEL_ALIAS = os.getenv("ASR_MODEL_ALIAS", "paraformer-zh")
+VAD_MODEL_ALIAS = os.getenv("VAD_MODEL_ALIAS", "fsmn-vad")
+PUNC_MODEL_ALIAS = os.getenv("PUNC_MODEL_ALIAS", "ct-punc")
+SPK_MODEL_ALIAS = os.getenv("SPK_MODEL_ALIAS", "cam++")
+
+
 def _resolve_model(env_key: str, local_name: str) -> str:
     value = os.getenv(env_key)
     if value:
         return value
-    local_path = MODELS_DIR / local_name
-    if local_path.is_dir():
-        return str(local_path)
+    if RESOLVE_LOCAL_ASR_MODELS:
+        local_path = MODELS_DIR / local_name
+        if local_path.is_dir():
+            return str(local_path)
     return local_name
 
 
-ASR_MODEL = _resolve_model("ASR_MODEL", "paraformer-zh")
-VAD_MODEL = _resolve_model("VAD_MODEL", "fsmn-vad")
-PUNC_MODEL = _resolve_model("PUNC_MODEL", "ct-punc")
-SPK_MODEL = _resolve_model("SPK_MODEL", "cam++")
+ASR_MODEL = _resolve_model("ASR_MODEL", ASR_MODEL_ALIAS)
+VAD_MODEL = _resolve_model("VAD_MODEL", VAD_MODEL_ALIAS)
+PUNC_MODEL = _resolve_model("PUNC_MODEL", PUNC_MODEL_ALIAS)
+SPK_MODEL = _resolve_model("SPK_MODEL", SPK_MODEL_ALIAS)
 
 HOST = os.getenv("ASR_HOST", "0.0.0.0")
 PORT = int(os.getenv("ASR_PORT", "8000"))
@@ -57,6 +66,11 @@ SEGMENT_MERGE_MAX_GAP_SECONDS = float(os.getenv("SEGMENT_MERGE_MAX_GAP_SECONDS",
 LEADER_RELATIVE_MIN_SCORE = float(os.getenv("LEADER_RELATIVE_MIN_SCORE", "0.12"))
 LEADER_RELATIVE_MARGIN = float(os.getenv("LEADER_RELATIVE_MARGIN", "0.10"))
 LEADER_RELATIVE_SUPPORT_SEGMENTS = int(os.getenv("LEADER_RELATIVE_SUPPORT_SEGMENTS", "3"))
+LEADER_SHORT_SUPPORT_SEGMENTS = int(os.getenv("LEADER_SHORT_SUPPORT_SEGMENTS", "2"))
+LEADER_STRONG_SUPPORT_SEGMENTS = int(os.getenv("LEADER_STRONG_SUPPORT_SEGMENTS", "6"))
+LEADER_STRONG_SUPPORT_MIN_SCORE = float(os.getenv("LEADER_STRONG_SUPPORT_MIN_SCORE", "0.20"))
+LEADER_STRONG_SUPPORT_MARGIN = float(os.getenv("LEADER_STRONG_SUPPORT_MARGIN", "0.04"))
+LEADER_MERGE_MATCHED_SPEAKERS = _bool_env("LEADER_MERGE_MATCHED_SPEAKERS", True)
 LEADER_ENROLLMENT_MIN_SPEECH_SECONDS = float(os.getenv("LEADER_ENROLLMENT_MIN_SPEECH_SECONDS", "5.0"))
 LEADER_ENROLLMENT_MIN_SIMILARITY = float(os.getenv("LEADER_ENROLLMENT_MIN_SIMILARITY", "0.60"))
 LEADER_ENROLLMENT_SPEECH_DBFS = float(os.getenv("LEADER_ENROLLMENT_SPEECH_DBFS", "-50"))

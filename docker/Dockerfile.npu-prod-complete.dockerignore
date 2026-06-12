@@ -1,0 +1,10 @@
+**
+!app/
+!app/**
+!docker/
+!docker/entrypoint.npu.sh
+!deploy/
+!deploy/ascend-npu/
+!deploy/ascend-npu/models/
+!deploy/ascend-npu/models/Qwen2.5-1.5B-Instruct/
+!deploy/ascend-npu/models/Qwen2.5-1.5B-Instruct/**

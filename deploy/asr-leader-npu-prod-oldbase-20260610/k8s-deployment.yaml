@@ -1,0 +1,78 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asr-leader-npu
+  namespace: test
+  labels:
+    app: asr-leader-npu
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: asr-leader-npu
+  template:
+    metadata:
+      labels:
+        app: asr-leader-npu
+    spec:
+      nodeName: worker06-910b
+      containers:
+        - name: asr-leader-npu
+          image: funasr-leader-asr:npu-prod-oldbase-20260610
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: ASR_DEVICE
+              value: npu:0
+            - name: ASR_RESOLVE_LOCAL_MODELS
+              value: "false"
+            - name: MODELS_DIR
+              value: /app/models
+            - name: DATA_DIR
+              value: /data
+            - name: POSTPROCESS_ENABLED
+              value: "true"
+            - name: POSTPROCESS_PRELOAD
+              value: "true"
+            - name: POSTPROCESS_DEVICE
+              value: npu:0
+            - name: POSTPROCESS_MODEL
+              value: Qwen/Qwen2.5-1.5B-Instruct
+            - name: POSTPROCESS_MODEL_DIR
+              value: /app/models/Qwen2.5-1.5B-Instruct
+            - name: POSTPROCESS_WORKERS
+              value: "1"
+            - name: POSTPROCESS_SYNC_MAX_CHARS
+              value: "1200"
+            - name: POSTPROCESS_SYNC_TIMEOUT_SECONDS
+              value: "120"
+            - name: CORRECTION_TASK_WORKERS
+              value: "1"
+            - name: TRANSFORMERS_OFFLINE
+              value: "1"
+            - name: MODELSCOPE_OFFLINE
+              value: "1"
+            - name: ASR_NORMALIZE_ASCEND_DEVICES
+              value: "false"
+          resources:
+            limits:
+              huawei.com/Ascend910: "1"
+            requests:
+              cpu: "2"
+              memory: 8Gi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 180
+            periodSeconds: 30
+            timeoutSeconds: 5
