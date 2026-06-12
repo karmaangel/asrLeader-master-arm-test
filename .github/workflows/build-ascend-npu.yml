@@ -77,6 +77,62 @@ jobs:
           docker image inspect "${LOCAL_IMAGE}" --format '{{.Id}} {{.Architecture}} {{.Os}}'
           df -h
 
+      - name: Smoke test Ascend NPU image
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/asr_npu_smoke.py <<'PY'
+          import importlib
+          import platform
+          import sys
+
+          print("python:", sys.version)
+          print("machine:", platform.machine())
+
+          for name in [
+              "torch",
+              "torch_npu",
+              "funasr",
+              "modelscope",
+              "fastapi",
+              "uvicorn",
+              "config",
+              "model_service",
+              "post_processor",
+              "main",
+          ]:
+              module = importlib.import_module(name)
+              print(f"import {name}: OK")
+              if hasattr(module, "__version__"):
+                  print(f"{name} version:", module.__version__)
+
+          import torch
+          import torch_npu
+          from main import app
+          from model_service import FunASRService
+
+          print("torch version:", torch.__version__)
+          print("torch_npu version:", torch_npu.__version__)
+          print("has torch.npu:", hasattr(torch, "npu"))
+          try:
+              print("torch.npu.is_available:", torch.npu.is_available())
+          except Exception as exc:
+              print("torch.npu.is_available error:", repr(exc))
+
+          service = FunASRService()
+          print("service device:", service.device)
+          print("route count:", len(app.routes))
+          print("SMOKE_OK")
+          PY
+
+          docker run --rm \
+            -e POSTPROCESS_ENABLED=false \
+            -e POSTPROCESS_PRELOAD=false \
+            -e ASR_DEVICE=npu:0 \
+            -v /tmp/asr_npu_smoke.py:/tmp/asr_npu_smoke.py:ro \
+            "${LOCAL_IMAGE}" \
+            python /tmp/asr_npu_smoke.py
+
       - name: Push image to GHCR
         if: ${{ inputs.publish_ghcr }}
         shell: bash
