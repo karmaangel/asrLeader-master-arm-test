@@ -83,11 +83,13 @@ jobs:
           set -euo pipefail
           cat > /tmp/asr_npu_smoke.py <<'PY'
           import importlib
+          import os
           import platform
           import sys
 
           print("python:", sys.version)
           print("machine:", platform.machine())
+          print("cwd:", os.getcwd())
 
           for name in [
               "torch",
@@ -102,7 +104,7 @@ jobs:
               "main",
           ]:
               module = importlib.import_module(name)
-              print(f"import {name}: OK")
+              print(f"import {name}: OK", getattr(module, "__file__", ""))
               if hasattr(module, "__version__"):
                   print(f"{name} version:", module.__version__)
 
@@ -131,7 +133,7 @@ jobs:
             -e ASR_DEVICE=npu:0 \
             -v /tmp/asr_npu_smoke.py:/tmp/asr_npu_smoke.py:ro \
             "${LOCAL_IMAGE}" \
-            python /tmp/asr_npu_smoke.py
+            bash -lc 'cd /app/app && python /tmp/asr_npu_smoke.py'
 
       - name: Push image to GHCR
         if: ${{ inputs.publish_ghcr }}
